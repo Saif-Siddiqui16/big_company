@@ -96,9 +96,18 @@ export const ProductListingPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleEdit = (product: Product) => {
+  const handleEdit = (product: any) => {
     setEditingProduct(product);
-    form.setFieldsValue(product);
+    if (product.retailerId !== null && product.retailerId !== undefined) {
+      form.setFieldsValue({
+        ...product,
+        costPrice: 0,
+        price: product.costPrice,
+        retailerPrice: product.price
+      });
+    } else {
+      form.setFieldsValue(product);
+    }
     setIsModalOpen(true);
   };
 
@@ -194,21 +203,27 @@ export const ProductListingPage = () => {
     },
     {
       title: 'Supplier Price',
-      dataIndex: 'costPrice',
       key: 'costPrice',
-      render: (price: number) => <Text style={{ color: '#666' }}>{price?.toLocaleString() || 0} RWF</Text>
+      render: (_: any, record: any) => {
+        const val = record.retailerId !== null && record.retailerId !== undefined ? 0 : record.costPrice;
+        return <Text style={{ color: '#666' }}>{val?.toLocaleString() || 0} RWF</Text>;
+      }
     },
     {
       title: 'Wholesaler Price',
-      dataIndex: 'price',
       key: 'price',
-      render: (price: number) => <Text style={{ color: '#ff7a45' }}>{price?.toLocaleString() || 0} RWF</Text>
+      render: (_: any, record: any) => {
+        const val = record.retailerId !== null && record.retailerId !== undefined ? record.costPrice : record.price;
+        return <Text style={{ color: '#ff7a45' }}>{val?.toLocaleString() || 0} RWF</Text>;
+      }
     },
     {
       title: 'Retailer Price',
-      dataIndex: 'retailerPrice',
       key: 'retailerPrice',
-      render: (price: number) => <Text strong style={{ color: '#52c41a' }}>{price?.toLocaleString() || 0} RWF</Text>
+      render: (_: any, record: any) => {
+        const val = record.retailerId !== null && record.retailerId !== undefined ? record.price : record.retailerPrice;
+        return <Text strong style={{ color: '#52c41a' }}>{val?.toLocaleString() || 0} RWF</Text>;
+      }
     },
     {
       title: 'Stock',
