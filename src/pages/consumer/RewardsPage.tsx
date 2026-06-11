@@ -726,11 +726,11 @@ export const RewardsPage: React.FC = () => {
                   const gasPrice = gasConfig?.price_per_m3 || 1500;
                   const minVolumeForRwf = adminMinRwf / gasPrice;
 
-                  if (value < minVolumeForRwf) {
-                    return Promise.reject(new Error(`Minimum amount is ${adminMinRwf} RWF (~${minVolumeForRwf.toFixed(2)} M³)`));
-                  }
                   if (isZamuka && value < 0.1) {
                     return Promise.reject(new Error('Minimum volume for Zamuka meter is 0.1 M³'));
+                  }
+                  if (value <= 0) {
+                    return Promise.reject(new Error('Amount must be greater than 0'));
                   }
                   return Promise.resolve();
                 },
