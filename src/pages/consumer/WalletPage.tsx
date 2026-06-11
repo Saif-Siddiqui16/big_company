@@ -106,6 +106,7 @@ const ConsumerWalletPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('transactions');
 
   const [topUpForm] = Form.useForm();
+  const selectedPaymentMethod = Form.useWatch('payment_method', topUpForm);
   const [refundForm] = Form.useForm();
   const [loanForm] = Form.useForm();
 
@@ -201,6 +202,7 @@ const ConsumerWalletPage: React.FC = () => {
           const response = await consumerApi.topupWallet({
               amount: values.amount,
               payment_method: values.payment_method || 'mobile_money',
+              phone: values.phone,
           });
           if (response.data.success) {
               message.success('Top-up successful');
@@ -690,12 +692,27 @@ const ConsumerWalletPage: React.FC = () => {
                   <Form.Item name="amount" label="Amount (RWF)" rules={[{ required: true }]}>
                       <InputNumber style={{ width: '100%' }} min={100} />
                   </Form.Item>
-                  <Form.Item name="payment_method" label="Payment Method" initialValue="momo">
+                   <Form.Item name="payment_method" label="Payment Method" initialValue="momo">
                       <Select>
                           <Select.Option value="momo">MTN Mobile Money</Select.Option>
                           <Select.Option value="airtel">Airtel Money</Select.Option>
                       </Select>
                   </Form.Item>
+                  {(selectedPaymentMethod === 'momo' || selectedPaymentMethod === 'airtel') && (
+                      <Form.Item
+                          name="phone"
+                          label="Mobile Money Phone Number"
+                          rules={[
+                              { required: true, message: 'Please enter phone number' },
+                              { pattern: /^[0-9]+$/, message: 'Please enter a valid phone number' }
+                          ]}
+                      >
+                          <Input
+                              placeholder="Enter MoMo number (e.g. 078XXXXXXX)"
+                              prefix={<MobileOutlined />}
+                          />
+                      </Form.Item>
+                  )}
                   <Button type="primary" htmlType="submit" loading={loading} block>Top Up</Button>
               </Form>
           </Modal>

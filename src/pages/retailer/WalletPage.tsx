@@ -615,7 +615,7 @@ export const WalletPage = () => {
                 </Select>
               </Form.Item>
 
-              {selectedSource === 'mobile_money' && (
+              {(selectedSource === 'momo' || selectedSource === 'airtel') && (
                 <Form.Item
                   name="phone"
                   label="Mobile Money Phone Number"

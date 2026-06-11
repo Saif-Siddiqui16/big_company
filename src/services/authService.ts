@@ -66,6 +66,7 @@ export const authService = {
         return {
           success: true,
           access_token: response.data.access_token,
+          require_password_reset: response.data.require_password_reset,
           user: {
             id: customer.id,
             email: customer.email,
@@ -84,6 +85,7 @@ export const authService = {
         return {
           success: true,
           access_token: response.data.access_token,
+          require_password_reset: response.data.require_password_reset,
           user: {
             id: retailer.id,
             email: retailer.email,
@@ -101,6 +103,7 @@ export const authService = {
         return {
           success: true,
           access_token: response.data.access_token,
+          require_password_reset: response.data.require_password_reset,
           user: {
             id: wholesaler.id,
             email: wholesaler.email,
@@ -118,6 +121,7 @@ export const authService = {
         return {
           success: true,
           access_token: response.data.access_token,
+          require_password_reset: response.data.require_password_reset,
           user: {
             id: employee.id,
             email: employee.email,
@@ -137,6 +141,7 @@ export const authService = {
         return {
           success: true,
           access_token: response.data.access_token,
+          require_password_reset: response.data.require_password_reset,
           user: {
             id: admin.id,
             email: admin.email,
@@ -152,6 +157,7 @@ export const authService = {
         return {
           success: true,
           access_token: response.data.access_token,
+          require_password_reset: response.data.require_password_reset,
           user: {
             ...response.data.user,
             role: role,
@@ -163,6 +169,7 @@ export const authService = {
       return {
         success: response.data.success,
         access_token: response.data.access_token || response.data.token,
+        require_password_reset: response.data.require_password_reset,
         user: {
           id: response.data.id || response.data.user_id,
           email:

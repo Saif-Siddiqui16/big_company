@@ -204,7 +204,7 @@ export const OrdersPage = () => {
 
       // Mock gas rewards calculation (12% of profit when profit >= 1000 RWF)
       const gasRewardsRwf = Math.round(totalOnlineRevenue * 0.03); // ~3% as gas rewards
-      const gasRewardsM3 = gasRewardsRwf / 300; // Assuming 300 RWF per M³
+      const gasRewardsM3 = gasRewardsRwf / 1000; // Assuming 1000 RWF per M³
 
       setStats({
         pending: allOrders.filter((o: Order) => o.status === 'pending').length,

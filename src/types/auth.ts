@@ -42,4 +42,5 @@ export interface AuthResponse {
     phone: string;
   };
   message?: string;
+  require_password_reset?: boolean;
 }

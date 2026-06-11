@@ -4,6 +4,8 @@ import { message } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserRole } from '../../types/auth';
 import { BrandedName } from '../../components/BrandedName';
+import axios from 'axios';
+import { API_URL } from '../../config';
 
 // Icons
 const ShoppingCartIcon = () => (
@@ -218,6 +220,18 @@ export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
+  // Forgot Password States
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [isSendingForgot, setIsSendingForgot] = useState(false);
+
+  // Force Password Reset States
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [tempPasswordUsed, setTempPasswordUsed] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+
   const config = roleConfig[activeRole];
 
   // Dynamic Auth Method State (defaults to config preference, but can be toggled)
@@ -248,11 +262,61 @@ export const LoginPage: React.FC = () => {
       const credentials = authMethod === 'phone'
         ? { phone_number: phone, pin }
         : { email, password };
-      await login(credentials, activeRole);
+      const res = await login(credentials, activeRole);
+      
+      if (res && res.require_password_reset) {
+        setTempPasswordUsed(authMethod === 'phone' ? pin : password);
+        setShowResetModal(true);
+        message.warning('Temporary password matched! Please set a new password.');
+        return;
+      }
+
       message.success('Login successful!');
       navigate(config.redirect);
     } catch (error: any) {
       message.error(error.response?.data?.error || error.response?.data?.message || 'Login failed. Please try again.');
+    }
+  };
+
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) return;
+    setIsSendingForgot(true);
+    try {
+      const endpoint = `${API_URL}/${activeRole}/auth/forgot-password`;
+      await axios.post(endpoint, { email: forgotEmail, role: activeRole });
+      message.success('Temporary password has been sent to your email.');
+      setShowForgotModal(false);
+      setForgotEmail('');
+    } catch (error: any) {
+      message.error(error.response?.data?.error || 'Failed to send temporary password. Please check your email.');
+    } finally {
+      setIsSendingForgot(false);
+    }
+  };
+
+  const handleForceResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmNewPassword) {
+      message.error('Passwords do not match');
+      return;
+    }
+    setIsResettingPassword(true);
+    try {
+      const token = localStorage.getItem('bigcompany_token');
+      const endpoint = `${API_URL}/${activeRole}/auth/update-password`;
+      await axios.put(
+        endpoint,
+        { old_password: tempPasswordUsed, new_password: newPassword },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      message.success('Password updated successfully! Welcome to your dashboard.');
+      setShowResetModal(false);
+      navigate(config.redirect);
+    } catch (error: any) {
+      message.error(error.response?.data?.error || 'Failed to update password. Please try again.');
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -510,9 +574,13 @@ export const LoginPage: React.FC = () => {
                   />
                   <span className="text-gray-600">Remember me</span>
                 </label>
-                <a href="#" className={`${config.textColor} hover:underline`}>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(true)}
+                  className={`${config.textColor} hover:underline focus:outline-none`}
+                >
                   Forgot password?
-                </a>
+                </button>
               </div>
 
               {/* Submit Button */}
@@ -563,6 +631,91 @@ export const LoginPage: React.FC = () => {
           © {new Date().getFullYear()} Big Innovation Group Ltd. All rights reserved.
         </p>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl animate-fade-in border border-gray-100">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-extrabold text-gray-900">Forgot Password?</h3>
+              <button 
+                onClick={() => setShowForgotModal(false)} 
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <p className="text-gray-600 text-sm mb-6">
+              Enter your email address and we will send you a temporary password to regain access to your account.
+            </p>
+            <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                <input
+                  type="email"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  placeholder="yourname@bigcompany.rw"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isSendingForgot}
+                className={`w-full ${config.buttonColor} text-white font-semibold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2`}
+              >
+                {isSendingForgot ? 'Sending...' : 'Send Temporary Password'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Force Password Reset Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl animate-fade-in border border-gray-100">
+            <h3 className="text-xl font-extrabold text-gray-900 mb-4 text-center">Change Password</h3>
+            <p className="text-gray-600 text-sm mb-6 text-center">
+              You are logging in with a temporary password. Please set a secure new password to continue.
+            </p>
+            <form onSubmit={handleForceResetSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                <input
+                  type="password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isResettingPassword}
+                className={`w-full ${config.buttonColor} text-white font-semibold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2`}
+              >
+                {isResettingPassword ? 'Updating...' : 'Update Password & Login'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

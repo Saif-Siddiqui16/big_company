@@ -10,9 +10,9 @@ import { CartProvider } from './contexts/CartContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AppLayout } from './components/AppLayout';
 
-// Pages
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/auth/LoginPage';
+import { RegisterPage } from './pages/auth/RegisterPage';
 import { ShopPage } from './pages/consumer/ShopPage';
 import { OrdersPage as ConsumerOrdersPage } from './pages/consumer/OrdersPage';
 import { RetailersPage as ConsumerRetailersPage } from './pages/consumer/RetailersPage';
@@ -103,6 +103,7 @@ function App() {
             {/* Public Routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/auth/register" element={<RegisterPage />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />
 
             {/* Consumer Routes - wrapped with CartProvider */}

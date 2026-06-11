@@ -3,7 +3,7 @@ import { User, UserRole, AuthState, LoginCredentials } from '../types/auth';
 import { authService } from '../services/authService';
 
 interface AuthContextType extends AuthState {
-  login: (credentials: LoginCredentials, role: UserRole) => Promise<void>;
+  login: (credentials: LoginCredentials, role: UserRole) => Promise<{ require_password_reset?: boolean } | void>;
   logout: () => void;
   setUserFromToken: (token: string, role: UserRole) => void;
 }
@@ -86,6 +86,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isAuthenticated: true,
         isLoading: false,
       });
+      return { require_password_reset: response.require_password_reset };
     } catch (error) {
       setState(prev => ({ ...prev, isLoading: false }));
       throw error;

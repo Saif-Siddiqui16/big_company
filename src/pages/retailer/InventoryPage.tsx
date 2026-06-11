@@ -66,22 +66,10 @@ interface InventoryStats {
   categories: number;
 }
 
-const categories = [
-  'Grains & Cereals',
-  'Cooking Essentials',
-  'Beverages',
-  'Snacks',
-  'Dairy & Eggs',
-  'Meat & Fish',
-  'Fruits & Vegetables',
-  'Household Items',
-  'Personal Care',
-  'Baby Products',
-];
-
 export const InventoryPage = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState<InventoryStats | null>(null);
@@ -119,8 +107,23 @@ export const InventoryPage = () => {
   const [fileList, setFileList] = useState<any[]>([]);
 
   useEffect(() => {
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
     loadProducts();
   }, [categoryFilter, showLowStock, profitMarginFilter, pagination.current]);
+
+  const loadCategories = async () => {
+    try {
+      const response = await retailerApi.getCategories();
+      if (response.data && response.data.categories) {
+        setCategories(response.data.categories);
+      }
+    } catch (error) {
+      console.error('Failed to load categories', error);
+    }
+  };
 
   const loadProducts = async (silent = false) => {
     if (!silent) setLoading(true);
