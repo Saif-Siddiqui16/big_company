@@ -118,7 +118,7 @@ const roleConfig: Record<PublicUserRole, {
     buttonColor: 'bg-emerald-600 hover:bg-emerald-700',
     redirect: '/consumer/shop',
     authType: 'phone' as const,
-    credentials: { phone: '250788100001', pin: '1234', email: '', password: '' },
+    credentials: { phone: '', pin: '', email: '', password: '' },
   },
   employee: {
     title: 'Employee Portal',
@@ -132,7 +132,7 @@ const roleConfig: Record<PublicUserRole, {
     buttonColor: 'bg-amber-600 hover:bg-amber-700',
     redirect: '/employee/attendance',
     authType: 'email' as const,
-    credentials: { phone: '', pin: '', email: 'employee@big.co.rw', password: 'employee123' },
+    credentials: { phone: '', pin: '', email: '', password: '' },
   },
   retailer: {
     title: 'Retailer Dashboard',
@@ -146,7 +146,7 @@ const roleConfig: Record<PublicUserRole, {
     buttonColor: 'bg-blue-600 hover:bg-blue-700',
     redirect: '/retailer/dashboard',
     authType: 'email' as const,
-    credentials: { phone: '', pin: '', email: 'retailer@bigcompany.rw', password: 'retailer123' },
+    credentials: { phone: '', pin: '', email: '', password: '' },
   },
   wholesaler: {
     title: 'Wholesaler Portal',
@@ -160,7 +160,7 @@ const roleConfig: Record<PublicUserRole, {
     buttonColor: 'bg-purple-600 hover:bg-purple-700',
     redirect: '/wholesaler/dashboard',
     authType: 'email' as const,
-    credentials: { phone: '', pin: '', email: 'wholesaler@bigcompany.rw', password: 'wholesaler123' },
+    credentials: { phone: '', pin: '', email: '', password: '' },
   },
   admin: {
     title: 'Admin Portal',
@@ -174,7 +174,7 @@ const roleConfig: Record<PublicUserRole, {
     buttonColor: 'bg-red-600 hover:bg-red-700',
     redirect: '/admin/dashboard',
     authType: 'email' as const,
-    credentials: { phone: '', pin: '', email: 'admin@big.co.rw', password: 'admin123' },
+    credentials: { phone: '', pin: '', email: '', password: '' },
   },
 };
 
@@ -218,7 +218,6 @@ export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   // Forgot Password States
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -249,11 +248,7 @@ export const LoginPage: React.FC = () => {
     }
   }, [activeRole, config.authType, config.credentials]);
 
-  const copyToClipboard = (text: string, field: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedField(field);
-    setTimeout(() => setCopiedField(null), 2000);
-  };
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -320,40 +315,7 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const fillDemoCredentials = () => {
-    // Fill based on current visible method
-    if (authMethod === 'phone') {
-      if (activeRole === 'consumer') {
-        setPhone('250788100001');
-        setPin('1234');
-      } else {
-        setPhone(config.credentials.phone);
-        setPin(config.credentials.pin);
-      }
-    } else {
-      if (activeRole === 'consumer') {
-        // Hardcoded demo email/pass for consumer until config is updated
-        setEmail('consumer@big.co.rw');
-        setPassword('1234'); // Or whatever the password is. 
-        // Wait, the seed said consumer only has PIN initially.
-        // The user instructions said "customer phone number or pin se login ho rha hai ese bhi email or password se intrigate kro".
-        // I verified backend works with password.
-        // I should verify what the valid password is.
-        // Seed data: consumer@bigcompany.rw / 1234 (hashed as PIN).
-        // But does consumer have a password set?
-        // In seed.ts: `pin: consumerPin` (which is hash of '1234').
-        // `password` field is not set for consumer in seed.ts!
-        // So 'consumer@bigcompany.rw' / '1234' won't work as password unless I update seed.
-        // But I already told the user to register a new user or update seed.
-        // For now, I will pre-fill with a placeholder or the intended one.
-        setEmail('consumer@big.co.rw');
-        setPassword('1234');
-      } else {
-        setEmail(config.credentials.email);
-        setPassword(config.credentials.password);
-      }
-    }
-  };
+
 
   return (
     <div className={`min-h-screen bg-gradient-to-br ${config.bgGradient} flex items-center justify-center p-4 relative overflow-hidden`}>
@@ -411,42 +373,7 @@ export const LoginPage: React.FC = () => {
               </button>
             ))}
           </div>
-
           <div className="p-6">
-            {/* Demo Credentials Box - COMPACT VERSION */}
-            <div className={`${config.lightBg} border ${config.borderColor} rounded-xl p-3 mb-4`}>
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex-1">
-                  <span className="text-[10px] text-gray-500 uppercase font-bold">Demo Email</span>
-                  <div className="flex items-center justify-between mt-0.5">
-                    <code className="text-xs font-mono font-bold text-gray-700">
-                      {activeRole === 'consumer' ? 'consumer@big.co.rw' : config.credentials.email}
-                    </code>
-                    <button onClick={() => copyToClipboard(activeRole === 'consumer' ? 'consumer@big.co.rw' : config.credentials.email, 'email')} className="text-gray-400 hover:text-gray-600">
-                      {copiedField === 'email' ? <CheckIcon /> : <CopyIcon />}
-                    </button>
-                  </div>
-                </div>
-                <div className="flex-1 border-l border-gray-200 pl-4">
-                  <span className="text-[10px] text-gray-500 uppercase font-bold">Password</span>
-                  <div className="flex items-center justify-between mt-0.5">
-                    <code className="text-xs font-mono font-bold text-gray-700">
-                      {activeRole === 'consumer' ? '1234' : config.credentials.password}
-                    </code>
-                    <button onClick={() => copyToClipboard(activeRole === 'consumer' ? '1234' : config.credentials.password, 'password')} className="text-gray-400 hover:text-gray-600">
-                      {copiedField === 'password' ? <CheckIcon /> : <CopyIcon />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={fillDemoCredentials}
-                className={`w-full mt-2 py-1 text-[10px] rounded-lg border border-dashed ${config.borderColor} ${config.textColor} font-bold hover:${config.lightBg} transition-colors`}
-              >
-                Auto-fill
-              </button>
-            </div>
-
             {/* Login Form */}
             <form onSubmit={handleLogin} className="space-y-6">
               {authMethod === 'phone' ? (

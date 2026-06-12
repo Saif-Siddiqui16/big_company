@@ -393,7 +393,7 @@ export const ShopPage: React.FC = () => {
 
   return (
     <ConfigProvider theme={{ token: { colorPrimary: '#10b981', borderRadius: 16 } }}>
-      <div className="shop-container" style={{ minHeight: '100vh', background: '#fdfdfd', padding: 24, margin: -24 }}>
+      <div className="shop-container" style={{ minHeight: '100vh', background: '#fdfdfd', padding: 24, paddingBottom: 120, margin: -24 }}>
         <style>{`
           .hero-section { background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-radius: 28px; padding: 48px; margin-bottom: 32px; color: white; position: relative; overflow: hidden; box-shadow: 0 15px 35px rgba(16, 185, 129, 0.15); }
           .category-tag { padding: 10px 20px; border-radius: 12px; border: 1px solid #f1f5f9; cursor: pointer; transition: 0.3s; background: white; color: #64748b; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; }
