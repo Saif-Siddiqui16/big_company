@@ -120,8 +120,8 @@ export const RewardsPage: React.FC = () => {
         if (balanceRes.data.success) {
           const totalUnits = balanceRes.data.data.total_units || 0;
           setBalance({
-            points: Math.round(totalUnits * 100),
-            lifetime_points: Math.round(totalUnits * 100),
+            points: totalUnits * 100,
+            lifetime_points: totalUnits * 100,
           });
         }
       } catch (e) { console.error('Balance fetch failed', e); }
@@ -330,7 +330,7 @@ export const RewardsPage: React.FC = () => {
       key: 'points',
       render: (points: number, record: RewardTransaction) => {
         const isPositive = ['earned', 'bonus', 'referral', 'purchase'].includes(record.type);
-        const gasAmount = (points * 0.01).toFixed(2);
+        const gasAmount = (points * 0.01).toFixed(4);
         return (
           <Text strong style={{ color: isPositive ? '#52c41a' : '#ff4d4f' }}>
             {isPositive ? '+' : '-'} {gasAmount} M³
@@ -354,7 +354,7 @@ export const RewardsPage: React.FC = () => {
   // Custom render for columns to handle types better
   const renderAmount = (points: number, record: RewardTransaction) => {
     const isPositive = points >= 0;
-    const gasAmount = (Math.abs(points) * 0.01).toFixed(2);
+    const gasAmount = (Math.abs(points) * 0.01).toFixed(4);
     return (
       <Text strong style={{ color: isPositive ? '#52c41a' : '#ff4d4f' }}>
         {isPositive ? '+' : '-'}
@@ -431,7 +431,7 @@ export const RewardsPage: React.FC = () => {
               </Text>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 16 }}>
                 <Title level={2} style={{ color: 'white', margin: '8px 0 0 0' }}>
-                  {((balance?.points || 0) * 0.01).toFixed(2)} M³
+                  {((balance?.points || 0) * 0.01).toFixed(4)} M³
                 </Title>
                 <Button
                   type="primary"
@@ -464,7 +464,7 @@ export const RewardsPage: React.FC = () => {
             marginTop: 12,
           }}
         >
-          Lifetime: {((balance?.lifetime_points || 0) * 0.01).toFixed(2)} M³ earned
+          Lifetime: {((balance?.lifetime_points || 0) * 0.01).toFixed(4)} M³ earned
         </Text>
       </div>
 
@@ -681,7 +681,7 @@ export const RewardsPage: React.FC = () => {
             title={
               <Space>
                 <InfoCircleOutlined style={{ color: '#1890ff' }} />
-                <Text strong>Available Balance: {((balance?.points || 0) * 0.01).toFixed(2)} M³</Text>
+                <Text strong>Available Balance: {((balance?.points || 0) * 0.01).toFixed(4)} M³</Text>
               </Space>
             }
             type="info"

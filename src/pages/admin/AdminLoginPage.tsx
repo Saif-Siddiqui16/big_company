@@ -27,8 +27,8 @@ export const AdminLoginPage: React.FC = () => {
 
   // Demo credentials for admin
   const demoCredentials = {
-    email: 'admin@big.co.rw',
-    password: 'admin123',
+    email: '',
+    password: '',
   };
 
   const handleLogin = async (values: { email: string; password: string }) => {
@@ -96,9 +96,7 @@ export const AdminLoginPage: React.FC = () => {
     }
   };
 
-  const fillDemoCredentials = () => {
-    form.setFieldsValue(demoCredentials);
-  };
+
 
   return (
     <div
@@ -141,33 +139,7 @@ export const AdminLoginPage: React.FC = () => {
           <Text type="secondary">Big Innovation Group Ltd - Administration</Text>
         </div>
 
-        {/* Default Backend Credentials Box */}
-        <Card
-          size="small"
-          style={{
-            background: '#fff2f0',
-            border: '1px solid #ffccc7',
-            marginBottom: 24,
-            borderRadius: 8,
-          }}
-        >
-          <div style={{ marginBottom: 8 }}>
-            <Text strong style={{ color: '#f5222d' }}>Default Backend Admin</Text>
-          </div>
-          <div style={{ fontSize: 12 }}>
-            <div>Email: <code>{demoCredentials.email}</code></div>
-            <div>Password: <code>{demoCredentials.password}</code></div>
-          </div>
-          <Button
-            type="dashed"
-            size="small"
-            block
-            onClick={fillDemoCredentials}
-            style={{ marginTop: 8 }}
-          >
-            Auto-fill Credentials
-          </Button>
-        </Card>
+
 
         <Form
           form={form}
