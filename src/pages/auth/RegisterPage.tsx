@@ -74,8 +74,9 @@ export const RegisterPage: React.FC = () => {
       return;
     }
 
-    if (!email.toLowerCase().endsWith('.consumer@big.co.rw')) {
-      message.error('Email must follow format: name.consumer@big.co.rw');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      message.error('Please enter a valid email address');
       return;
     }
 
@@ -199,12 +200,12 @@ export const RegisterPage: React.FC = () => {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name.consumer@big.co.rw"
+                    placeholder="yourname@example.com"
                     className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
                     required
                   />
                 </div>
-                <span className="text-[10px] text-gray-500 mt-1 block">Must follow the format: <b>name.consumer@big.co.rw</b></span>
+                <span className="text-[10px] text-gray-500 mt-1 block">Enter a valid email address</span>
               </div>
 
               <div>
