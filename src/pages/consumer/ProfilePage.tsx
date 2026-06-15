@@ -125,6 +125,7 @@ export const ProfilePage: React.FC = () => {
         },
         body: JSON.stringify({
           full_name: values.name,
+          phone: values.phone,
           email: values.email,
           address: values.address,
           landmark: values.landmark,
@@ -264,7 +265,7 @@ export const ProfilePage: React.FC = () => {
                   <Form.Item name="phone" label="Phone Number">
                     <Input
                       prefix={<PhoneOutlined />}
-                      disabled
+                      disabled={!editing}
                       placeholder="Phone number"
                     />
                   </Form.Item>
@@ -387,7 +388,7 @@ export const ProfilePage: React.FC = () => {
                 <div style={{ textAlign: 'center', padding: '16px 0' }}>
                   <Text type="secondary">Gas Rewards</Text>
                   <Title level={3} style={{ margin: '8px 0 0', color: '#fa8c16' }}>
-                    {stats?.gas_rewards?.toFixed(1) ?? 0} M³
+                    {stats?.gas_rewards?.toFixed(4) ?? 0} M³
                   </Title>
                   <Text type="secondary" style={{ fontSize: 12 }}>Cubic Meters</Text>
                 </div>

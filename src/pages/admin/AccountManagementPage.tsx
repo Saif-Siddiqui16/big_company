@@ -123,8 +123,8 @@ const AccountManagementPage: React.FC = () => {
           phone: r.user?.phone,
           address: r.address,
           credit_limit: r.creditLimit,
-          orders: 0,
-          revenue: 0,
+          orders: r.orders || 0,
+          revenue: r.revenue || 0,
           status: r.user?.isActive ? 'active' : 'inactive',
           verified: r.isVerified,
           created_at: r.user?.createdAt || r.createdAt
@@ -138,8 +138,8 @@ const AccountManagementPage: React.FC = () => {
           email: w.user?.email,
           phone: w.user?.phone,
           address: w.address,
-          orders: 0,
-          revenue: 0,
+          orders: w.orders || 0,
+          revenue: w.revenue || 0,
           status: w.user?.isActive ? 'active' : 'inactive',
           verified: w.isVerified,
           created_at: w.user?.createdAt || w.createdAt
