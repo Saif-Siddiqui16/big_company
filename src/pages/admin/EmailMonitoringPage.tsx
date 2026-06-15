@@ -9,7 +9,9 @@ const { Option } = Select;
 
 interface EmailLog {
   id: number;
-  recipientEmail: string;
+  recipientEmail?: string;
+  recipientPhone?: string;
+  channel: 'EMAIL' | 'SMS';
   subject?: string;
   templateType: string;
   status: 'PENDING' | 'SENT' | 'FAILED' | 'RETRYING' | 'PERMANENT_FAILURE';
@@ -29,6 +31,7 @@ const EmailMonitoringPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const [channelFilter, setChannelFilter] = useState<string | undefined>(undefined);
   const [search, setSearch] = useState('');
   const [isManualModalVisible, setIsManualModalVisible] = useState(false);
   const [sendingManual, setSendingManual] = useState(false);
@@ -53,6 +56,7 @@ const EmailMonitoringPage: React.FC = () => {
         page,
         limit,
         status: statusFilter,
+        channel: channelFilter,
         search: search || undefined
       });
 
@@ -107,7 +111,7 @@ const EmailMonitoringPage: React.FC = () => {
 
     // Clean up interval on unmount
     return () => clearInterval(interval);
-  }, [page, statusFilter]);
+  }, [page, statusFilter, channelFilter]);
 
   const handleSearch = () => {
     setPage(1);
@@ -145,23 +149,32 @@ const EmailMonitoringPage: React.FC = () => {
 
   const columns = [
     {
-      title: 'Recipient',
-      dataIndex: 'recipientEmail',
-      key: 'recipientEmail',
-      render: (text: string) => <Text strong>{text}</Text>
+      title: 'Channel',
+      dataIndex: 'channel',
+      key: 'channel',
+      render: (text: string) => (
+        <Tag color={text === 'SMS' ? 'purple' : 'cyan'}>{text || 'EMAIL'}</Tag>
+      )
     },
     {
-      title: 'Subject',
+      title: 'Recipient',
+      key: 'recipient',
+      render: (_: any, record: EmailLog) => (
+        <Text strong>{record.channel === 'SMS' ? record.recipientPhone : record.recipientEmail}</Text>
+      )
+    },
+    {
+      title: 'Subject / Purpose',
       dataIndex: 'subject',
       key: 'subject',
       ellipsis: true,
-      render: (text: string) => text || '-'
+      render: (text: string, record: EmailLog) => text || record.templateType || '-'
     },
     {
       title: 'Type',
       dataIndex: 'templateType',
       key: 'templateType',
-      render: (text: string) => <Tag color="blue">{text.replace(/_/g, ' ')}</Tag>
+      render: (text: string) => <Tag color="blue">{text ? text.replace(/_/g, ' ') : '-'}</Tag>
     },
     {
       title: 'Status',
@@ -278,7 +291,7 @@ const EmailMonitoringPage: React.FC = () => {
       <Card style={{ marginTop: '24px' }}>
         <Space style={{ marginBottom: '24px' }} wrap>
           <Input
-            placeholder="Search by email, subject or type..."
+            placeholder="Search by recipient, subject or purpose..."
             prefix={<SearchOutlined />}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -288,7 +301,7 @@ const EmailMonitoringPage: React.FC = () => {
           <Select
             placeholder="Filter by status"
             allowClear
-            style={{ width: 200 }}
+            style={{ width: 180 }}
             onChange={setStatusFilter}
           >
             <Option value="PENDING">Pending</Option>
@@ -297,10 +310,19 @@ const EmailMonitoringPage: React.FC = () => {
             <Option value="FAILED">Failed</Option>
             <Option value="PERMANENT_FAILURE">Permanent Failure</Option>
           </Select>
+          <Select
+            placeholder="Filter by channel"
+            allowClear
+            style={{ width: 160 }}
+            onChange={setChannelFilter}
+          >
+            <Option value="EMAIL">Email</Option>
+            <Option value="SMS">SMS</Option>
+          </Select>
           <Button type="primary" onClick={handleSearch} icon={<SearchOutlined />}>
             Search
           </Button>
-          <Button onClick={() => { setSearch(''); setStatusFilter(undefined); setPage(1); fetchLogs(); }} icon={<ReloadOutlined />}>
+          <Button onClick={() => { setSearch(''); setStatusFilter(undefined); setChannelFilter(undefined); setPage(1); fetchLogs(); }} icon={<ReloadOutlined />}>
             Reset
           </Button>
         </Space>

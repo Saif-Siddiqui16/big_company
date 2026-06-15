@@ -222,6 +222,7 @@ export const LoginPage: React.FC = () => {
   // Forgot Password States
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotMethod, setForgotMethod] = useState<'email' | 'phone'>('email');
   const [isSendingForgot, setIsSendingForgot] = useState(false);
 
   // Force Password Reset States
@@ -279,12 +280,16 @@ export const LoginPage: React.FC = () => {
     setIsSendingForgot(true);
     try {
       const endpoint = `${API_URL}/${activeRole}/auth/forgot-password`;
-      await axios.post(endpoint, { email: forgotEmail, role: activeRole });
-      message.success('Temporary password has been sent to your email.');
+      const res = await axios.post(endpoint, { 
+        email: forgotEmail, 
+        role: activeRole, 
+        method: forgotMethod 
+      });
+      message.success(res.data.message || 'Temporary password has been sent.');
       setShowForgotModal(false);
       setForgotEmail('');
     } catch (error: any) {
-      message.error(error.response?.data?.error || 'Failed to send temporary password. Please check your email.');
+      message.error(error.response?.data?.error || 'Failed to send temporary password. Please verify your details.');
     } finally {
       setIsSendingForgot(false);
     }
@@ -575,16 +580,51 @@ export const LoginPage: React.FC = () => {
               </button>
             </div>
             <p className="text-gray-600 text-sm mb-6">
-              Enter your email address and we will send you a temporary password to regain access to your account.
+              Choose how you want to reset your password and enter your details to receive a temporary password.
             </p>
+            
+            {/* Reset Option Choice */}
+            <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
+              <button
+                type="button"
+                onClick={() => {
+                  setForgotMethod('email');
+                  setForgotEmail('');
+                }}
+                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+                  forgotMethod === 'email'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                Email
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setForgotMethod('phone');
+                  setForgotEmail('');
+                }}
+                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+                  forgotMethod === 'phone'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                Phone Number
+              </button>
+            </div>
+
             <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {forgotMethod === 'email' ? 'Email Address' : 'Phone Number'}
+                </label>
                 <input
-                  type="email"
+                  type={forgotMethod === 'email' ? 'email' : 'text'}
                   value={forgotEmail}
                   onChange={(e) => setForgotEmail(e.target.value)}
-                  placeholder="yourname@bigcompany.rw"
+                  placeholder={forgotMethod === 'email' ? 'yourname@bigcompany.rw' : '250788xxxxxx'}
                   className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
                   required
                 />

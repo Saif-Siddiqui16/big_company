@@ -111,6 +111,16 @@ interface DashboardStats {
     total: number;
     active: number;
   };
+  wallets?: {
+    totalBalance: number;
+  };
+  rewards?: {
+    totalPoints: number;
+  };
+  inventory?: {
+    totalProducts: number;
+    totalValue: number;
+  };
   recentActivity: any[];
 }
 
@@ -124,6 +134,9 @@ const initialStats: DashboardStats = {
   nfcCards: { total: 0, active: 0, linked: 0 },
   retailers: { total: 0, active: 0, verified: 0 },
   wholesalers: { total: 0, active: 0 },
+  wallets: { totalBalance: 0 },
+  rewards: { totalPoints: 0 },
+  inventory: { totalProducts: 0, totalValue: 0 },
   recentActivity: [],
 };
 
@@ -461,6 +474,42 @@ const AdminDashboard: React.FC = () => {
               title="Transaction Volume (30d)"
               value={stats.transactions.totalVolume}
               formatter={(value) => `${Number(value).toLocaleString()} RWF`}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Platform Assets & Liquidity */}
+      <Title level={4} style={{ marginBottom: 16 }}>Platform Assets & Liquidity</Title>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={8}>
+          <Card>
+            <Statistic
+              title="System-wide Wallet Balance"
+              value={stats.wallets?.totalBalance || 0}
+              formatter={(value) => `${Number(value).toLocaleString()} RWF`}
+              prefix={<DollarOutlined style={{ color: '#52c41a' }} />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card>
+            <Statistic
+              title="Total Distributed Rewards"
+              value={stats.rewards?.totalPoints || 0}
+              formatter={(value) => `${Number(value).toLocaleString()} Points`}
+              prefix={<RiseOutlined style={{ color: '#faad14' }} />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card>
+            <Statistic
+              title="Total Platform Inventory Value"
+              value={stats.inventory?.totalValue || 0}
+              formatter={(value) => `${Number(value).toLocaleString()} RWF`}
+              prefix={<BankOutlined style={{ color: '#722ed1' }} />}
+              suffix={<span style={{ fontSize: 12, color: '#8c8c8c' }}> ({stats.inventory?.totalProducts || 0} items)</span>}
             />
           </Card>
         </Col>

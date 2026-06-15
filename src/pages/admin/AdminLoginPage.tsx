@@ -60,7 +60,7 @@ export const AdminLoginPage: React.FC = () => {
     setIsSendingForgot(true);
     try {
       const endpoint = `${API_URL}/admin/auth/forgot-password`;
-      await axios.post(endpoint, { email: forgotEmail, role: 'admin' });
+      await axios.post(endpoint, { email: forgotEmail, role: 'admin', method: 'email' });
       message.success('Temporary password has been sent to your email.');
       setShowForgotModal(false);
       setForgotEmail('');
