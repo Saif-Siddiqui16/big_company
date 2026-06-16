@@ -78,6 +78,7 @@ const GasMeterRechargePage: React.FC = () => {
     const [result, setResult] = useState<RechargeResult | null>(null);
     const [history, setHistory] = useState<RechargeTransaction[]>([]);
     const [walletBalance, setWalletBalance] = useState(0);
+    const [creditBalance, setCreditBalance] = useState(0);
     const [nfcCards, setNfcCards] = useState<any[]>([]);
     const [registeredMeters, setRegisteredMeters] = useState<any[]>([]);
     const [metersLoading, setMetersLoading] = useState(false);
@@ -85,7 +86,7 @@ const GasMeterRechargePage: React.FC = () => {
 
     // Form values
     const [meterType, setMeterType] = useState<'LORA_NB' | 'GPRS'>('LORA_NB');
-    const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'mobile_money' | 'nfc_card'>('wallet');
+    const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'credit_wallet' | 'mobile_money' | 'nfc_card'>('wallet');
     const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
     const [customAmount, setCustomAmount] = useState<string>('');
     const [pipingMode, setPipingMode] = useState<'ORDINARY' | 'TOKEN_PUSH'>('ORDINARY');
@@ -120,6 +121,8 @@ const GasMeterRechargePage: React.FC = () => {
             if (walletsRes.data.success && Array.isArray(walletsRes.data.data)) {
                 const dashWallet = walletsRes.data.data.find((w: any) => w.type === 'dashboard_wallet');
                 setWalletBalance(dashWallet?.balance || 0);
+                const credWallet = walletsRes.data.data.find((w: any) => w.type === 'credit_wallet');
+                setCreditBalance(credWallet?.balance || 0);
             }
 
             if (nfcRes.data.success && Array.isArray(nfcRes.data.data)) {
@@ -195,6 +198,11 @@ const GasMeterRechargePage: React.FC = () => {
             return;
         }
 
+        if (!isPushToken && paymentMethod === 'credit_wallet' && creditBalance < cost) {
+            message.error(`Insufficient credit wallet balance. Available: ${creditBalance.toLocaleString()} RWF. Required: ${cost.toLocaleString()} RWF`);
+            return;
+        }
+
         if (paymentMethod === 'mobile_money' && !values.phone) {
             message.error('Please enter a phone number for mobile money payment.');
             return;
@@ -233,6 +241,8 @@ const GasMeterRechargePage: React.FC = () => {
                 await loadHistory();
                 if (paymentMethod === 'wallet') {
                     setWalletBalance((prev) => prev - cost);
+                } else if (paymentMethod === 'credit_wallet') {
+                    setCreditBalance((prev) => prev - cost);
                 }
             }
         } catch (err: any) {
@@ -685,6 +695,13 @@ const GasMeterRechargePage: React.FC = () => {
                                                     <WalletOutlined style={{ color: '#1890ff' }} />
                                                     <span>Wallet Balance</span>
                                                     <Tag color="blue">{walletBalance.toLocaleString()} RWF</Tag>
+                                                </Space>
+                                            </Radio>
+                                            <Radio value="credit_wallet">
+                                                <Space>
+                                                    <WalletOutlined style={{ color: '#eb2f96' }} />
+                                                    <span>Credit Balance</span>
+                                                    <Tag color="magenta">{creditBalance.toLocaleString()} RWF</Tag>
                                                 </Space>
                                             </Radio>
                                             <Radio value="mobile_money">

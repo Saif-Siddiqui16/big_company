@@ -723,7 +723,7 @@ export const gasMeterRechargeApi = {
     meterNumber: string;
     meterType: 'TOKEN' | 'PIPING';
     amount: number;
-    paymentMethod: 'wallet' | 'mobile_money' | 'nfc_card';
+    paymentMethod: 'wallet' | 'credit_wallet' | 'mobile_money' | 'nfc_card';
     phone?: string;
     cardId?: number;
     token?: string;
