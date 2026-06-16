@@ -14,6 +14,8 @@ interface EmailTemplate {
   content: string;
   description?: string;
   isActive: boolean;
+  portal?: string;
+  triggerName?: string;
   updatedAt: string;
 }
 
@@ -142,6 +144,18 @@ const EmailTemplateManagementPage: React.FC = () => {
       dataIndex: 'subject',
       key: 'subject',
       render: (text: string) => <Text strong>{text}</Text>
+    },
+    {
+      title: 'Audience/Target',
+      dataIndex: 'portal',
+      key: 'portal',
+      render: (text: string) => <Tag color="orange">{(text || 'CUSTOMER').toUpperCase()}</Tag>
+    },
+    {
+      title: 'Trigger Action',
+      dataIndex: 'triggerName',
+      key: 'triggerName',
+      render: (text: string) => <Text>{text || '-'}</Text>
     },
     {
       title: 'Status',
@@ -287,6 +301,40 @@ const EmailTemplateManagementPage: React.FC = () => {
             rules={[{ required: true, message: 'Please enter a template name' }]}
           >
             <Input placeholder="e.g., ONBOARDING_WELCOME" disabled={!!editingTemplate} />
+          </Form.Item>
+
+          <Form.Item
+            name="portal"
+            label="Template Target / Audience"
+            rules={[{ required: true, message: 'Please select template target audience' }]}
+            initialValue="CUSTOMER"
+          >
+            <Select placeholder="Select target audience">
+              <Option value="CUSTOMER">Customer</Option>
+              <Option value="RETAILER">Retailer</Option>
+              <Option value="WHOLESALER">Wholesaler</Option>
+              <Option value="SHARED">Multiple/All (Shared)</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="triggerName"
+            label="Trigger Action"
+            rules={[{ required: true, message: 'Please select or enter the trigger action' }]}
+          >
+            <Select placeholder="Select or enter trigger action" showSearch allowClear style={{ width: '100%' }}>
+              <Option value="account creation">Account Creation</Option>
+              <Option value="password reset">Password Reset</Option>
+              <Option value="order confirmation">Order Confirmation</Option>
+              <Option value="gas top-up">Gas Top-up</Option>
+              <Option value="loan request">Loan Request</Option>
+              <Option value="loan repayment">Loan Repayment</Option>
+              <Option value="account activation">Account Activation</Option>
+              <Option value="account deactivation">Account Deactivation</Option>
+              <Option value="PIN/password change">PIN/Password Change</Option>
+              <Option value="reward notification">Reward Notification</Option>
+              <Option value="system announcement">System Announcement</Option>
+            </Select>
           </Form.Item>
 
           <Form.Item

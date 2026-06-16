@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, Tag, Input, Space, Button, Card, Typography, message, Pagination, Select, Row, Col, Modal, Form } from 'antd';
+import { Table, Tag, Input, Space, Button, Card, Typography, message, Pagination, Select, Row, Col, Modal, Form, Radio } from 'antd';
 import { SearchOutlined, ReloadOutlined, MailOutlined, CheckCircleOutlined, ExclamationCircleOutlined, ClockCircleOutlined, SettingOutlined } from '@ant-design/icons';
 import { adminApi } from '../../services/apiService';
 
@@ -37,6 +37,7 @@ const EmailMonitoringPage: React.FC = () => {
   const [sendingManual, setSendingManual] = useState(false);
   const [manualForm] = Form.useForm();
   const [templates, setTemplates] = useState<any[]>([]);
+  const [recipientMode, setRecipientMode] = useState<'individual' | 'group'>('individual');
 
   const fetchTemplates = async () => {
     try {
@@ -76,18 +77,24 @@ const EmailMonitoringPage: React.FC = () => {
       const values = await manualForm.validateFields();
       setSendingManual(true);
       
-      const recipients = values.recipients.split(',').map((e: string) => e.trim()).filter((e: string) => e);
-      
-      const response = await adminApi.sendManualEmail({
-        recipients,
+      const payload: any = {
         subject: values.subject,
         html: values.html,
         category: 'MANUAL_ANNOUNCEMENT'
-      });
+      };
+
+      if (recipientMode === 'individual') {
+        payload.recipients = values.recipients.split(',').map((e: string) => e.trim()).filter((e: string) => e);
+      } else {
+        payload.groups = values.groups;
+      }
+      
+      const response = await adminApi.sendManualEmail(payload);
 
       if (response.data.success) {
         message.success(response.data.message);
         setIsManualModalVisible(false);
+        setRecipientMode('individual');
         manualForm.resetFields();
         fetchLogs();
       }
@@ -236,7 +243,11 @@ const EmailMonitoringPage: React.FC = () => {
         title="Send Manual Announcement"
         open={isManualModalVisible}
         onOk={handleManualSend}
-        onCancel={() => setIsManualModalVisible(false)}
+        onCancel={() => {
+          setIsManualModalVisible(false);
+          setRecipientMode('individual');
+          manualForm.resetFields();
+        }}
         width={700}
         okText="Send to Queue"
         confirmLoading={sendingManual}
@@ -264,13 +275,44 @@ const EmailMonitoringPage: React.FC = () => {
               ))}
             </Select>
           </Form.Item>
+          
           <Form.Item 
-            name="recipients" 
-            label="Recipients (Comma separated emails)" 
-            rules={[{ required: true, message: 'Please enter at least one recipient' }]}
+            name="recipientMode" 
+            label="Recipient Mode"
+            initialValue="individual"
           >
-            <Input placeholder="e.g., admin@big.co.rw, manager@big.co.rw" />
+            <Radio.Group value={recipientMode} onChange={(e) => setRecipientMode(e.target.value)}>
+              <Radio value="individual">Individual Mode</Radio>
+              <Radio value="group">Group Mode</Radio>
+            </Radio.Group>
           </Form.Item>
+
+          {recipientMode === 'individual' ? (
+            <Form.Item 
+              name="recipients" 
+              label="Recipients (Comma separated emails)" 
+              rules={[{ required: true, message: 'Please enter at least one recipient' }]}
+            >
+              <Input placeholder="e.g., customer@gmail.com, retailer@yahoo.com" />
+            </Form.Item>
+          ) : (
+            <Form.Item 
+              name="groups" 
+              label="User Groups" 
+              rules={[{ required: true, message: 'Please select at least one group' }]}
+            >
+              <Select 
+                mode="multiple" 
+                placeholder="Select user groups" 
+                allowClear
+              >
+                <Option value="Customers">Customers</Option>
+                <Option value="Retailers">Retailers</Option>
+                <Option value="Wholesalers">Wholesalers</Option>
+              </Select>
+            </Form.Item>
+          )}
+
           <Form.Item 
             name="subject" 
             label="Email Subject" 

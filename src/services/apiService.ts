@@ -691,8 +691,7 @@ export const adminApi = {
   saveEmailTemplate: (data: any) => api.post('/admin/email-templates', data),
   deleteEmailTemplate: (id: number) => api.delete(`/admin/email-templates/${id}`),
 
-  sendManualEmail: (data: { recipients: string[]; subject: string; html: string; category?: string }) =>
-    api.post('/admin/send-manual-email', data),
+  sendManualEmail: (data: { recipients?: string[]; groups?: string[]; subject: string; html: string; category?: string }) => api.post('/admin/send-manual-email', data),
   getEmailEvents: () => api.get('/admin/email-events'),
   updateEmailEvent: (id: number, data: any) => api.put(`/admin/email-events/${id}`, data),
   getSystemAlerts: () => api.get('/admin/alerts'),

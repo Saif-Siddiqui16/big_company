@@ -223,7 +223,7 @@ export const ShopPage = () => {
             // Merge lists, avoiding duplicates
             const ids = new Set(prev.map(p => p.id));
             const combined = [...prev];
-            nearby.forEach((n: { id: string; name: string; location: string; image?: string; isLinked: boolean }) => {
+            nearby.forEach((n: Retailer & { isLinked: boolean }) => {
               if (!ids.has(n.id)) {
                 combined.push(n);
               }
