@@ -395,6 +395,7 @@ export const ShopPage = () => {
       if (response.data.success) {
         setPaymentSuccess(true);
         message.success("Order placed successfully!");
+        fetchProducts();
         setTimeout(() => {
           clearCart();
           setShowCheckoutModal(false);
