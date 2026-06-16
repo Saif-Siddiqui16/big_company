@@ -29,20 +29,16 @@ import {
   SearchOutlined,
   EnvironmentOutlined,
   ShopOutlined,
-  ClockCircleOutlined,
   StarFilled,
   PlusOutlined,
   MinusOutlined,
-  FilterOutlined,
   RightOutlined,
-  AimOutlined,
   WalletOutlined,
-  MobileOutlined,
-  PhoneOutlined,
   CheckCircleOutlined,
   LockOutlined,
   DeleteOutlined,
   SendOutlined,
+  PhoneOutlined,
 } from '@ant-design/icons';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { consumerApi } from '../../services/apiService';
@@ -82,7 +78,7 @@ interface CustomerLocation {
   cell: string;
 }
 
-export const ShopPage: React.FC = () => {
+export const ShopPage = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -106,15 +102,15 @@ export const ShopPage: React.FC = () => {
   const [retailers, setRetailers] = useState<Retailer[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [showRetailerModal, setShowRetailerModal] = useState(false);
   const [showCartDrawer, setShowCartDrawer] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
+
 
   // NEW: Track if user can buy (linked to this retailer)
   const [canBuy, setCanBuy] = useState(false);
-  const [isLinked, setIsLinked] = useState(false);
+  const [, setIsLinked] = useState(false);
   const [viewingRetailerInfo, setViewingRetailerInfo] = useState<{ id: number, shopName: string, address: string } | null>(null);
 
   const [customerLocation, setCustomerLocation] = useState<CustomerLocation | null>(() => {
@@ -184,12 +180,14 @@ export const ShopPage: React.FC = () => {
 
         // NEW: Load linked retailers from profile
         if (profileRes.data.success && profileRes.data.data.linkedRetailers) {
-          const linked = profileRes.data.data.linkedRetailers.map((r: any) => ({
-            id: r.id,
+          const linked = profileRes.data.data.linkedRetailers.map((r: { id: number; shopName: string; address: string; image?: string }) => ({
+            id: String(r.id),
             name: r.shopName,
             location: r.address,
-            image: r.image, // Ensure image is passed if available
-            isLinked: true
+            image: r.image,
+            isLinked: true,
+            rating: 0,
+            is_open: true,
           }));
           setRetailers(linked);
 
@@ -211,19 +209,21 @@ export const ShopPage: React.FC = () => {
             cell: currentLocation.cell
           });
 
-          const nearby = response.data.retailers?.map((r: any) => ({
-            id: r.id,
+          const nearby = response.data.retailers?.map((r: { id: number; shopName: string; address: string; image?: string; requestStatus?: string }) => ({
+            id: String(r.id),
             name: r.shopName,
             location: r.address,
             image: r.image,
-            isLinked: r.requestStatus === 'approved'
+            isLinked: r.requestStatus === 'approved',
+            rating: 0,
+            is_open: true,
           })) || [];
 
           setRetailers(prev => {
             // Merge lists, avoiding duplicates
             const ids = new Set(prev.map(p => p.id));
             const combined = [...prev];
-            nearby.forEach((n: any) => {
+            nearby.forEach((n: { id: string; name: string; location: string; image?: string; isLinked: boolean }) => {
               if (!ids.has(n.id)) {
                 combined.push(n);
               }
@@ -238,7 +238,7 @@ export const ShopPage: React.FC = () => {
       } finally { setLoading(false); }
     };
     init();
-  }, [customerLocation, selectedRetailer]);
+  }, [customerLocation, selectedRetailer, urlRetailerId]);
 
   const fetchProducts = useCallback(async () => {
     // Use URL retailerId if available, otherwise use selected retailer
@@ -321,6 +321,25 @@ export const ShopPage: React.FC = () => {
       return;
     }
 
+    // Determine stock
+    let stock = 0;
+    if (p.price !== undefined) {
+      stock = p.stock || 0;
+    } else if (p.variants && p.variants.length > 0) {
+      stock = p.variants[0].inventory_quantity;
+    }
+
+    if (stock <= 0) {
+      message.warning('This product is out of stock.');
+      return;
+    }
+
+    const currentQty = getItemQuantity(p.id);
+    if (currentQty >= stock) {
+      message.warning(`Only ${stock} units available in stock.`);
+      return;
+    }
+
     // Handle backend simple format
     if (p.price !== undefined) {
       addItem({
@@ -343,7 +362,7 @@ export const ShopPage: React.FC = () => {
     }
   };
 
-  const handlePaymentSubmit = async (values: any) => {
+  const handlePaymentSubmit = async (values: Record<string, string>) => {
     if (!selectedRetailer) return;
     setProcessingPayment(true);
     try {
@@ -364,8 +383,7 @@ export const ShopPage: React.FC = () => {
           price: item.price
         })),
         paymentMethod: backendPaymentMethod,
-        meterId: values.gasRewardWalletId,
-        gasRewardWalletId: gasRewardWalletId,
+        gasRewardWalletId: values.gasRewardWalletId || null, // What the customer typed at checkout
         total: cartTotal,
         metadata: {
           provider: paymentCategory === 'mobile_money' ? paymentSubOption : undefined
@@ -383,9 +401,10 @@ export const ShopPage: React.FC = () => {
           setPaymentSuccess(false);
         }, 2000);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Payment failed:", error);
-      message.error(error.response?.data?.error || "Payment failed. Please try again.");
+      const axiosError = error as { response?: { data?: { error?: string } } };
+      message.error(axiosError.response?.data?.error || "Payment failed. Please try again.");
     } finally {
       setProcessingPayment(false);
     }
@@ -582,7 +601,16 @@ export const ShopPage: React.FC = () => {
                             </div>
                           }
                         >
-                        <Text type="secondary" style={{ fontSize: 10, fontWeight: 700 }}>{categoryName}</Text>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                          <Text type="secondary" style={{ fontSize: 10, fontWeight: 700 }}>{categoryName}</Text>
+                          {stock === 0 ? (
+                            <Tag color="red" style={{ margin: 0 }}>OUT OF STOCK</Tag>
+                          ) : stock <= 5 ? (
+                            <Tag color="orange" style={{ margin: 0 }}>{stock} LEFT</Tag>
+                          ) : (
+                            <Tag color="default" style={{ margin: 0 }}>{stock} in stock</Tag>
+                          )}
+                        </div>
                         <Title level={5} style={{ margin: '4px 0 12px', height: 44, overflow: 'hidden' }}>{productName}</Title>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Text strong style={{ fontSize: 18, color: '#059669' }}>{formatPrice(pr)}</Text>
@@ -591,7 +619,13 @@ export const ShopPage: React.FC = () => {
                               <Space style={{ background: '#f0fdf4', borderRadius: 10, padding: 4 }}>
                                 <Button size="small" type="text" icon={<MinusOutlined />} onClick={() => updateQuantity(p.id, q - 1)} />
                                 <Text strong>{q}</Text>
-                                <Button size="small" type="text" icon={<PlusOutlined />} onClick={() => updateQuantity(p.id, q + 1)} />
+                                <Button size="small" type="text" icon={<PlusOutlined />} onClick={() => {
+                                  if (q >= stock) {
+                                    message.warning(`Only ${stock} units available in stock.`);
+                                    return;
+                                  }
+                                  updateQuantity(p.id, q + 1);
+                                }} disabled={q >= stock} />
                               </Space>
                             ) : (
                               <Button type="primary" shape="circle" icon={<PlusOutlined />} onClick={() => handleAddToCart(p)} disabled={stock === 0} />
@@ -773,6 +807,17 @@ export const ShopPage: React.FC = () => {
                     if (!canBuy) {
                       message.error('You must be approved by this retailer before placing orders. Please send a link request and wait for approval.');
                       return;
+                    }
+                    // Validate all cart items against loaded products stock
+                    for (const item of cartItems) {
+                      const prod = products.find(p => p.id === item.productId || String(p.id) === String(item.productId));
+                      if (prod) {
+                        const availableStock = prod.stock !== undefined ? prod.stock : (prod.variants?.[0]?.inventory_quantity || 0);
+                        if (item.quantity > availableStock) {
+                          message.error(`Cannot proceed. ${item.name} quantity in cart (${item.quantity}) exceeds available stock (${availableStock}).`);
+                          return;
+                        }
+                      }
                     }
                     setShowCartDrawer(false);
                     setShowCheckoutModal(true);
