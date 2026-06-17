@@ -279,7 +279,8 @@ export const LoginPage: React.FC = () => {
     if (!forgotEmail) return;
     setIsSendingForgot(true);
     try {
-      const endpoint = `${API_URL}/${activeRole}/auth/forgot-password`;
+      const rolePrefix = activeRole === 'consumer' ? 'store' : activeRole;
+      const endpoint = `${API_URL}/${rolePrefix}/auth/forgot-password`;
       const res = await axios.post(endpoint, { 
         email: forgotEmail, 
         role: activeRole, 

@@ -50,8 +50,8 @@ const EmailMonitoringPage: React.FC = () => {
     }
   };
 
-  const fetchLogs = async () => {
-    setLoading(true);
+  const fetchLogs = async (showLoadingSpinner = true) => {
+    if (showLoadingSpinner) setLoading(true);
     try {
       const response = await adminApi.getEmailLogs({
         page,
@@ -68,7 +68,7 @@ const EmailMonitoringPage: React.FC = () => {
     } catch (error: any) {
       message.error('Failed to fetch email logs: ' + (error.response?.data?.error || error.message));
     } finally {
-      setLoading(false);
+      if (showLoadingSpinner) setLoading(false);
     }
   };
 
@@ -113,7 +113,7 @@ const EmailMonitoringPage: React.FC = () => {
     
     // Set up auto-refresh every 5 seconds for real-time monitoring
     const interval = setInterval(() => {
-      fetchLogs();
+      fetchLogs(false);
     }, 5000);
 
     // Clean up interval on unmount
