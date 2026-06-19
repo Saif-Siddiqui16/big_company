@@ -368,7 +368,7 @@ const AccountManagementPage: React.FC = () => {
       title: 'Revenue',
       dataIndex: 'revenue',
       key: 'revenue',
-      render: (val) => <span className="text-gray-600">{val || 0} RWF</span>
+      render: (val) => <span className="text-gray-600">{(val || 0).toLocaleString()} RWF</span>
     },
     {
       title: 'Status',
@@ -452,7 +452,7 @@ const AccountManagementPage: React.FC = () => {
       title: 'Revenue',
       dataIndex: 'revenue',
       key: 'revenue',
-      render: (val) => <span className="text-gray-600">{val || 0} RWF</span>
+      render: (val) => <span className="text-gray-600">{(val || 0).toLocaleString()} RWF</span>
     },
     {
       title: 'Status',
@@ -537,7 +537,7 @@ const AccountManagementPage: React.FC = () => {
       title: 'Gas Reward',
       dataIndex: 'rewardsPoints',
       key: 'rewardsPoints',
-      render: (value) => <span className="text-orange-500">{((value || 0) / 100).toFixed(3)} M³</span>,
+      render: (value) => <span className="text-orange-500">{((value || 0) / 100).toFixed(4)} M³</span>,
     },
     {
       title: 'Status',

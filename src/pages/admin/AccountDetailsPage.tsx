@@ -213,7 +213,7 @@ const AccountDetailsPage: React.FC = () => {
               value={accountData.walletSummary?.gasRewardsWallet || 0}
               prefix={<FireOutlined style={{ color: '#fa8c16' }} />}
               suffix="M³"
-              precision={2}
+              precision={4}
               valueStyle={{ color: '#fa8c16' }}
             />
           </Card>
@@ -305,7 +305,7 @@ const AccountDetailsPage: React.FC = () => {
             <Col span={6}><Statistic title="Total Top-ups" value={accountData.gasUsage?.totalTopups || 0} /></Col>
             <Col span={6}><Statistic title="Total Amount" value={accountData.gasUsage?.totalAmount || 0} suffix="RWF" /></Col>
             <Col span={6}><Statistic title="Total Units" value={accountData.gasUsage?.totalUnits || 0} suffix="M3" /></Col>
-            <Col span={6}><Statistic title="Total Rewards" value={accountData.gasUsage?.totalRewards || 0} suffix="M3" /></Col>
+            <Col span={6}><Statistic title="Total Rewards" value={accountData.gasUsage?.totalRewards || 0} suffix="M3" precision={4} /></Col>
           </Row>
           <Divider>Gas Meters</Divider>
           <Table

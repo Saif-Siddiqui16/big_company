@@ -396,7 +396,7 @@ export const RetailerDashboard: React.FC = () => {
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         {[
           {
-            title: 'Today\'s Orders',
+            title: 'Total Orders',
             value: stats?.totalOrders || 0,
             icon: <ShoppingOutlined />,
             color: '#1890ff',
