@@ -257,7 +257,7 @@ const ManagementPage: React.FC = () => {
       dataIndex: 'gas_amount_m3',
       key: 'gas_amount_m3',
       render: (amount) => (
-        <Tag color="orange">{amount.toFixed(2)} M³</Tag>
+        <Tag color="orange">{amount.toFixed(4)} M³</Tag>
       ),
     },
     {
@@ -451,7 +451,7 @@ const ManagementPage: React.FC = () => {
               <Card>
                 <Statistic
                   title="Total Gas Rewards Given"
-                  value={totalGasRewards.toFixed(2)}
+                  value={totalGasRewards.toFixed(4)}
                   suffix="M³"
                   prefix={<FireOutlined style={{ color: '#fa541c' }} />}
                   valueStyle={{ color: '#fa541c' }}

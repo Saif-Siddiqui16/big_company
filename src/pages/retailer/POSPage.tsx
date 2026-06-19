@@ -438,7 +438,7 @@ const POSPage = () => {
             <Col span={6}>
               <Statistic
                 title="Gas Rewards"
-                value={`${(dailyStats.gas_rewards_m3 || 0).toFixed(2)} M³`}
+                value={`${(dailyStats.gas_rewards_m3 || 0).toFixed(4)} M³`}
                 suffix={<span style={{ fontSize: '12px', color: '#8c8c8c' }}>({(dailyStats.gas_rewards_rwf || 0).toLocaleString()} RWF)</span>}
                 styles={{ content: { fontSize: '16px', color: '#fa541c' } }}
               />

@@ -79,7 +79,7 @@ const ReportsPage: React.FC = () => {
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         <Text type="secondary" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-           {icon && React.cloneElement(icon as React.ReactElement, { style: { color, fontSize: '14px' } })}
+           {icon && React.cloneElement(icon as React.ReactElement, { style: { color, fontSize: '14px' } } as any)}
            {title}
         </Text>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap' }}>
@@ -121,8 +121,45 @@ const ReportsPage: React.FC = () => {
           <Col>
             <Space>
               <Button icon={<ReloadOutlined />} onClick={fetchData} style={{ borderRadius: '8px' }}>Refresh</Button>
-              <Button ghost icon={<DownloadOutlined />} style={{ borderRadius: '8px' }}>Export CSV</Button>
-              <Button type="primary" icon={<DownloadOutlined />} style={{ borderRadius: '8px', background: '#1890ff', border: 'none' }}>Export PDF</Button>
+              <Button 
+                ghost 
+                icon={<DownloadOutlined />} 
+                style={{ borderRadius: '8px' }}
+                onClick={() => {
+                  if (!summary) return message.warning('No data available to export');
+                  // Generate CSV representation
+                  let csvContent = 'data:text/csv;charset=utf-8,';
+                  csvContent += 'Metric,Value\r\n';
+                  csvContent += `Total Revenue,${summary.totalRevenue} RWF\r\n`;
+                  csvContent += `Total Orders,${summary.orderTotal}\r\n`;
+                  csvContent += `Retailers count,${summary.retailerTotal}\r\n`;
+                  csvContent += `Wholesalers count,${summary.wholesalerTotal}\r\n`;
+                  csvContent += `Gas Distributed,${summary.gasDistributed} M3\r\n`;
+                  csvContent += `Growth Rate,${summary.growthRate}%\r\n`;
+                  
+                  const encodedUri = encodeURI(csvContent);
+                  const link = document.createElement('a');
+                  link.setAttribute('href', encodedUri);
+                  link.setAttribute('download', `system_report_${dateRange}_${Date.now()}.csv`);
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  message.success('CSV Report exported successfully');
+                }}
+              >
+                Export CSV
+              </Button>
+              <Button 
+                type="primary" 
+                icon={<DownloadOutlined />} 
+                style={{ borderRadius: '8px', background: '#1890ff', border: 'none' }}
+                onClick={() => {
+                  if (!summary) return message.warning('No data available to export');
+                  window.print();
+                }}
+              >
+                Export PDF
+              </Button>
             </Space>
           </Col>
         </Row>
@@ -278,9 +315,86 @@ const ReportsPage: React.FC = () => {
                   </Row>
                 )
               },
-              { key: 'daily', label: 'Daily Sales', children: <div style={{ minHeight: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Text type="secondary">Sales charts will be available once more data is collected</Text></div> },
-              { key: 'products', label: 'Top Products', children: <div style={{ minHeight: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Text type="secondary">Product performance tracking...</Text></div> },
-              { key: 'retailers', label: 'Top Retailers', children: <div style={{ minHeight: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Text type="secondary">Retailer ranking system...</Text></div> },
+              { 
+                key: 'daily', 
+                label: 'Daily Sales', 
+                children: (
+                  <div style={{ padding: '8px 0' }}>
+                    <Title level={5} style={{ fontSize: '14px', marginBottom: '16px' }}>Daily Sales Trend</Title>
+                    {summary?.dailySales && summary.dailySales.length > 0 ? (
+                      <List
+                        dataSource={summary.dailySales}
+                        renderItem={(item: any) => (
+                          <List.Item style={{ padding: '12px 0' }}>
+                            <Text strong>{item.date}</Text>
+                            <Text type="success" strong>{item.revenue.toLocaleString()} RWF</Text>
+                          </List.Item>
+                        )}
+                      />
+                    ) : (
+                      <div style={{ minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Text type="secondary">No sales data collected yet for this period</Text>
+                      </div>
+                    )}
+                  </div>
+                )
+              },
+              { 
+                key: 'products', 
+                label: 'Top Products', 
+                children: (
+                  <div style={{ padding: '8px 0' }}>
+                    <Title level={5} style={{ fontSize: '14px', marginBottom: '16px' }}>Product Sales Leaders</Title>
+                    {summary?.topProducts && summary.topProducts.length > 0 ? (
+                      <List
+                        dataSource={summary.topProducts}
+                        renderItem={(item: any) => (
+                          <List.Item style={{ padding: '12px 0' }}>
+                            <div style={{ width: '100%' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                <Text strong>{item.name}</Text>
+                                <Text type="secondary">{item.quantity} units ({item.revenue.toLocaleString()} RWF)</Text>
+                              </div>
+                              <Progress percent={100} size="small" showInfo={false} strokeColor="#722ed1" />
+                            </div>
+                          </List.Item>
+                        )}
+                      />
+                    ) : (
+                      <div style={{ minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Text type="secondary">No product sales tracked yet</Text>
+                      </div>
+                    )}
+                  </div>
+                )
+              },
+              { 
+                key: 'retailers', 
+                label: 'Top Retailers', 
+                children: (
+                  <div style={{ padding: '8px 0' }}>
+                    <Title level={5} style={{ fontSize: '14px', marginBottom: '16px' }}>Retailer Revenue Leaders</Title>
+                    {summary?.topRetailers && summary.topRetailers.length > 0 ? (
+                      <List
+                        dataSource={summary.topRetailers}
+                        renderItem={(item: any) => (
+                          <List.Item style={{ padding: '12px 0' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              <Text strong>{item.shopName}</Text>
+                              <Text type="secondary" style={{ fontSize: '12px' }}>{item.salesCount} orders placed</Text>
+                            </div>
+                            <Text type="warning" strong>{item.revenue.toLocaleString()} RWF</Text>
+                          </List.Item>
+                        )}
+                      />
+                    ) : (
+                      <div style={{ minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Text type="secondary">No retailer revenue records found</Text>
+                      </div>
+                    )}
+                  </div>
+                )
+              },
             ]} />
           </Card>
         </Col>

@@ -60,7 +60,7 @@ interface Order {
   subtotal: number;
   discount: number;
   total: number;
-  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'ready' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'ready' | 'completed' | 'delivered' | 'cancelled';
   payment_method: 'dashboard_wallet' | 'credit_wallet' | 'mobile_money' | 'cash' | 'wallet' | 'nfc' | 'credit';
   payment_status: 'pending' | 'paid' | 'refunded';
   notes?: string;
@@ -100,6 +100,7 @@ const statusColors: Record<string, string> = {
   shipped: 'purple',
   ready: 'blue',
   completed: 'green',
+  delivered: 'green',
   cancelled: 'red',
 };
 
@@ -109,6 +110,7 @@ const statusLabels: Record<string, string> = {
   processing: 'PROCEED',
   shipped: 'SHIPPED',
   completed: 'DELIVERED',
+  delivered: 'DELIVERED',
   cancelled: 'CANCELLED',
 };
 
@@ -188,19 +190,26 @@ export const OrdersPage = () => {
       setPagination((prev) => ({ ...prev, total: data.total || 0 }));
 
       const allOrders = data.orders || [];
-      const completedOrders = allOrders.filter((o: Order) => o.status === 'completed');
+      const completedOrders = allOrders.filter((o: Order) => o.status === 'completed' || o.status === 'delivered');
 
-      // Calculate revenue by payment method
-      const dashboardWalletRevenue = completedOrders
-        .filter((o: Order) => o.payment_method === 'dashboard_wallet' || o.payment_method === 'wallet')
-        .reduce((sum: number, o: Order) => sum + o.total, 0);
-      const creditWalletRevenue = completedOrders
-        .filter((o: Order) => o.payment_method === 'credit_wallet' || o.payment_method === 'credit')
-        .reduce((sum: number, o: Order) => sum + o.total, 0);
-      const mobileMoneyRevenue = completedOrders
-        .filter((o: Order) => o.payment_method === 'mobile_money')
-        .reduce((sum: number, o: Order) => sum + o.total, 0);
-      const totalOnlineRevenue = dashboardWalletRevenue + creditWalletRevenue + mobileMoneyRevenue;
+      // Fetch actual stats from backend dashboard stats to get correct overall totals
+      let dashboardWalletRevenue = 0;
+      let creditWalletRevenue = 0;
+      let mobileMoneyRevenue = 0;
+      let totalOnlineRevenue = 0;
+
+      try {
+        const dashboardStatsResponse = await retailerApi.getDashboardStats();
+        if (dashboardStatsResponse.data && dashboardStatsResponse.data.stats) {
+          const ds = dashboardStatsResponse.data.stats;
+          dashboardWalletRevenue = ds.dashboardWalletRevenue || 0;
+          creditWalletRevenue = ds.creditWalletRevenue || 0;
+          mobileMoneyRevenue = ds.mobileMoneyRevenue || 0;
+          totalOnlineRevenue = dashboardWalletRevenue + creditWalletRevenue + mobileMoneyRevenue;
+        }
+      } catch (err) {
+        console.error('Failed to load dashboard stats:', err);
+      }
 
       // Fetch actual gas rewards from backend
       let gasRewardsM3 = 0;
@@ -532,7 +541,7 @@ export const OrdersPage = () => {
               <Card size="small" style={{ background: '#fff7e6', borderColor: '#ffc069' }}>
                 <Statistic
                   title="Gas Rewards Given"
-                  value={stats.gas_rewards_m3.toFixed(2)}
+                  value={stats.gas_rewards_m3.toFixed(4)}
                   suffix={<span>M³ <Text type="secondary" style={{ fontSize: 11 }}>({stats.gas_rewards_rwf.toLocaleString()} RWF)</Text></span>}
                   valueStyle={{ color: '#fa541c', fontSize: '16px' }}
                 />

@@ -233,7 +233,6 @@ export const ShopPage = () => {
         }
       } catch (error) {
         console.error("Error fetching shop data:", error);
-        message.error("Failed to load initial shop data");
         setCategories([]);
       } finally { setLoading(false); }
     };

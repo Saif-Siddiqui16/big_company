@@ -49,7 +49,7 @@ const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 
 export const ProfileSettingsPage: React.FC = () => {
-  const { user, login } = useAuth(); // Assuming login or setUser can update context, but maybe just re-fetch is enough.
+  const { user, login, updateUser } = useAuth(); // Assuming login or setUser can update context, but maybe just re-fetch is enough.
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [profileForm] = Form.useForm();
@@ -130,6 +130,18 @@ export const ProfileSettingsPage: React.FC = () => {
         message.success('Profile updated successfully');
         setProfileData(response.data.profile);
         setEditing(false);
+
+        if (user) {
+          const profile = response.data.profile;
+          updateUser({
+            ...user,
+            name: profile.user?.name || user.name,
+            phone: profile.user?.phone || user.phone,
+            email: profile.user?.email || user.email,
+            company_name: profile.companyName || profile.shopName || user.company_name || user.shop_name,
+            shop_name: profile.shopName || profile.companyName || user.shop_name || user.company_name
+          });
+        }
       }
     } catch (error) {
       console.error(error);
@@ -306,7 +318,7 @@ export const ProfileSettingsPage: React.FC = () => {
                       <Form.Item name="phone" label="Phone Number">
                         <Input
                           prefix={<PhoneOutlined />}
-                          disabled
+                          disabled={!editing}
                           placeholder="Phone number"
                         />
                       </Form.Item>

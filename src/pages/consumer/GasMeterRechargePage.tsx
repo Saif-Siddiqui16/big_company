@@ -208,6 +208,11 @@ const GasMeterRechargePage: React.FC = () => {
             return;
         }
 
+        if ((paymentMethod === 'wallet' || paymentMethod === 'credit_wallet') && !values.smsPhone) {
+            message.error('Please enter a phone number to receive the token SMS.');
+            return;
+        }
+
         setProcessing(true);
         try {
             // Direct client-side Piping meter API call has been disabled. All recharges strictly flow through the backend gasMeterRechargeApi.initiate now.
@@ -218,7 +223,7 @@ const GasMeterRechargePage: React.FC = () => {
                 amount: amount,
                 isVendByUnit: selectionMode === 'units',
                 paymentMethod,
-                phone: values.phone,
+                phone: paymentMethod === 'mobile_money' ? values.phone : values.smsPhone,
                 cardId: values.cardId,
                 token: values.pipingToken?.replace(/\s/g, ''),
                 provider: meterType === 'LORA_NB' ? 'stronpower' : 'zhongyi',
@@ -721,6 +726,22 @@ const GasMeterRechargePage: React.FC = () => {
                                         </Space>
                                     </Radio.Group>
                                 </Form.Item>
+
+                                {/* SMS Phone Number for Wallet or Credit Balance */}
+                                {(paymentMethod === 'wallet' || paymentMethod === 'credit_wallet') && (
+                                    <Form.Item
+                                        name="smsPhone"
+                                        label="SMS Phone Number"
+                                        rules={[{ required: true, message: 'Please enter a phone number to receive the token SMS.' }]}
+                                    >
+                                        <Input
+                                            prefix={<MobileOutlined />}
+                                            placeholder="e.g. 07XXXXXXXX"
+                                            size="large"
+                                            style={{ borderRadius: 8 }}
+                                        />
+                                    </Form.Item>
+                                )}
 
                                 {/* Mobile Money Phone */}
                                 {paymentMethod === 'mobile_money' && (

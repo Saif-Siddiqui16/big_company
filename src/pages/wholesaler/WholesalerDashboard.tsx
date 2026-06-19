@@ -424,7 +424,7 @@ export const WholesalerDashboard: React.FC = () => {
             value: stats?.inventoryValueSupplierCost || 0,
             icon: <InboxOutlined />,
             color: '#fa8c16',
-            formatter: formatCurrency,
+            formatter: formatFullCurrency,
             suffix: <Text type="secondary" style={{ fontSize: 12 }}>Based on supplier cost</Text>,
           },
           {
@@ -432,7 +432,7 @@ export const WholesalerDashboard: React.FC = () => {
             value: stats?.profitWallet || 0,
             icon: <DollarOutlined />,
             color: '#722ed1',
-            formatter: formatCurrency,
+            formatter: formatFullCurrency,
             suffix: <Text type="secondary" style={{ fontSize: 12 }}>Wholesaler - Supplier margin</Text>,
             growth: stats?.growth?.profit,
           },

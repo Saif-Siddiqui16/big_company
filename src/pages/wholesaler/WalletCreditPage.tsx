@@ -115,11 +115,10 @@ export const WalletCreditPage: React.FC = () => {
 
       // Calculate wallet values from inventory stats
       const stockValueSupplier = statsResponse.data?.stockValueSupplier || 0;
-      const stockValueWholesaler = statsResponse.data?.stockValueWholesaler || 0;
 
       setWalletStats({
         inventoryValueWallet: stockValueSupplier,
-        profitWallet: stockValueWholesaler - stockValueSupplier,
+        profitWallet: statsResponse.data?.realizedProfit || 0,
         totalCreditExtended: creditResponse.data?.stats?.totalCreditExtended || 0,
         creditUsed: creditResponse.data?.stats?.totalCreditUsed || 0,
         creditAvailable: creditResponse.data?.stats?.creditAvailable || 0,

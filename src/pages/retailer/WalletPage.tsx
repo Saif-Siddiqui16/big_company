@@ -136,6 +136,7 @@ export const WalletPage = () => {
   const [wallet, setWallet] = useState<WalletInfo | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [transactionPagination, setTransactionPagination] = useState({ current: 1, pageSize: 10, total: 0 });
+  const [dashboardStats, setDashboardStats] = useState<any>(null);
 
   // Credit states
   const [creditInfo, setCreditInfo] = useState<CreditInfo | null>(null);
@@ -169,17 +170,19 @@ export const WalletPage = () => {
     setError(null);
 
     try {
-      const [walletRes, transactionsRes] = await Promise.all([
+      const [walletRes, transactionsRes, statsRes] = await Promise.all([
         retailerApi.getWallet(),
         retailerApi.getWalletTransactions({
           limit: transactionPagination.pageSize,
           offset: (transactionPagination.current - 1) * transactionPagination.pageSize,
         }),
+        retailerApi.getDashboardStats(),
       ]);
 
       setWallet(walletRes.data?.wallet || walletRes.data);
       setTransactions(transactionsRes.data?.transactions || []);
       setTransactionPagination(prev => ({ ...prev, total: transactionsRes.data?.total || 0 }));
+      setDashboardStats(statsRes.data?.stats || null);
     } catch (err: any) {
       console.error('Wallet data error:', err);
       // Create mock data if API fails
@@ -813,7 +816,7 @@ export const WalletPage = () => {
                 <div>
                   <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px' }}>PROFIT WALLET</Text>
                   <Title level={2} style={{ color: 'white', margin: '8px 0' }}>
-                    {(wallet?.balance ? Math.round(wallet.balance * 0.15) : 0).toLocaleString()} RWF
+                    {(dashboardStats?.totalProfit || 0).toLocaleString()} RWF
                   </Title>
                   <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>
                     Profit margin from sales
@@ -857,7 +860,7 @@ export const WalletPage = () => {
               <Card size="small">
                 <Statistic
                   title="Total Sales This Month"
-                  value={Math.round((wallet?.balance || 0) * 1.25)}
+                  value={dashboardStats?.totalRevenue || 0}
                   suffix="RWF"
                   valueStyle={{ color: '#1890ff' }}
                   formatter={(value) => value?.toLocaleString()}
@@ -868,7 +871,7 @@ export const WalletPage = () => {
               <Card size="small">
                 <Statistic
                   title="Estimated Profit"
-                  value={Math.round((wallet?.balance || 0) * 0.15)}
+                  value={dashboardStats?.totalProfit || 0}
                   suffix="RWF"
                   valueStyle={{ color: '#52c41a' }}
                   formatter={(value) => value?.toLocaleString()}

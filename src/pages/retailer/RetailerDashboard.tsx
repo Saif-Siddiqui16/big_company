@@ -434,7 +434,7 @@ export const RetailerDashboard: React.FC = () => {
             extra: (
               <div style={{ marginTop: 4 }}>
                 <Text type="secondary" style={{ fontSize: 11 }}>
-                  <FireOutlined style={{ color: '#fa541c' }} /> Gas rewards: {stats?.gasRewardsGiven?.toFixed(2) || 0} M³
+                  <FireOutlined style={{ color: '#fa541c' }} /> Gas rewards: {stats?.gasRewardsGiven?.toFixed(4) || 0} M³
                 </Text>
               </div>
             ),
