@@ -202,9 +202,18 @@ export const OrdersPage = () => {
         .reduce((sum: number, o: Order) => sum + o.total, 0);
       const totalOnlineRevenue = dashboardWalletRevenue + creditWalletRevenue + mobileMoneyRevenue;
 
-      // Mock gas rewards calculation (12% of profit when profit >= 1000 RWF)
-      const gasRewardsRwf = Math.round(totalOnlineRevenue * 0.03); // ~3% as gas rewards
-      const gasRewardsM3 = gasRewardsRwf / 1000; // Assuming 1000 RWF per M³
+      // Fetch actual gas rewards from backend
+      let gasRewardsM3 = 0;
+      let gasRewardsRwf = 0;
+      try {
+        const gasRewardsResponse = await retailerApi.getGasRewards();
+        if (gasRewardsResponse.data && gasRewardsResponse.data.stats) {
+          gasRewardsM3 = gasRewardsResponse.data.stats.totalM3 || 0;
+          gasRewardsRwf = gasRewardsResponse.data.stats.totalValue || 0;
+        }
+      } catch (err) {
+        console.error('Failed to load real gas rewards:', err);
+      }
 
       setStats({
         pending: allOrders.filter((o: Order) => o.status === 'pending').length,
