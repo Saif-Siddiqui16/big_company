@@ -82,7 +82,7 @@ const POSPage = () => {
 
   // Payment modal state
   const [paymentModal, setPaymentModal] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'bigshop_card' | 'mobile_money'>('bigshop_card');
+  const [paymentMethod, setPaymentMethod] = useState<'bigshop_card' | 'momo' | 'airtel'>('bigshop_card');
   const [processing, setProcessing] = useState(false);
 
   // Big Shop Card payment flow
@@ -350,14 +350,15 @@ const POSPage = () => {
         console.log('Sending NFC Payment Data:', paymentDetails);
         break;
 
-      case 'mobile_money':
+      case 'momo':
+      case 'airtel':
         if (!customerPhone || customerPhone.length < 10) {
           message.error('Please enter a valid phone number');
           return;
         }
         paymentType = 'mobile_money';
         paymentDetails = {
-          provider: mobileProvider,
+          provider: paymentMethod === 'momo' ? 'mtn' : 'airtel',
           phone: customerPhone,
           gasRewardWalletId: gasRewardWalletId || undefined,
         };
@@ -899,7 +900,7 @@ const POSPage = () => {
         )}
 
         {/* Mobile Money Payment Flow */}
-        {paymentMethod === 'mobile_money' && (
+        {(paymentMethod === 'momo' || paymentMethod === 'airtel') && (
           <div style={{ padding: '20px 0' }}>
             <Title level={5} style={{ marginBottom: 16 }}>Select Mobile Money Provider</Title>
             <Radio.Group
