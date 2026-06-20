@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, InputNumber, Select, Row, Col, message, Upload } from 'antd';
+import { Modal, Form, Input, InputNumber, Select, Row, Col, message, Upload, Button } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import { wholesalerApi } from '../../services/apiService';
 
@@ -33,6 +33,24 @@ export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState<string[]>(defaultCategories);
     const [fileList, setFileList] = useState<any[]>([]);
+    const [generatingBarcode, setGeneratingBarcode] = useState(false);
+
+    const handleGenerateBarcode = async () => {
+        setGeneratingBarcode(true);
+        try {
+            const response = await wholesalerApi.generateBarcode();
+            if (response.data?.barcode) {
+                form.setFieldsValue({ barcode: response.data.barcode });
+                message.success('Barcode generated successfully!');
+            } else {
+                throw new Error('Failed to generate barcode');
+            }
+        } catch (error: any) {
+            message.error(error.response?.data?.error || 'Failed to generate barcode');
+        } finally {
+            setGeneratingBarcode(false);
+        }
+    };
 
     useEffect(() => {
         if (open) {
@@ -216,9 +234,22 @@ export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
                         </Form.Item>
                     </Col>
                     <Col span={12}>
-                        <Form.Item name="barcode" label="Barcode (Optional)">
+                        <Form.Item
+                            name="barcode"
+                            label="Barcode"
+                            rules={[{ required: true, message: 'Please enter or generate barcode' }]}
+                        >
                             <Input placeholder="Scan or enter barcode" />
                         </Form.Item>
+                        <Button
+                            onClick={handleGenerateBarcode}
+                            type="primary"
+                            ghost
+                            loading={generatingBarcode}
+                            style={{ width: '100%', marginTop: '-8px', marginBottom: '8px' }}
+                        >
+                            Generate Barcode
+                        </Button>
                     </Col>
                 </Row>
 

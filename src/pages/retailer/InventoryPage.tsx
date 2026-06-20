@@ -22,7 +22,11 @@ import {
   Alert,
   Tabs,
   Upload,
+  Checkbox,
+  List,
 } from 'antd';
+import { jsPDF } from 'jspdf';
+import JsBarcode from 'jsbarcode';
 import {
   SearchOutlined,
   ReloadOutlined,
@@ -105,6 +109,12 @@ export const InventoryPage = () => {
   const [createForm] = Form.useForm();
   const [createLoading, setCreateLoading] = useState(false);
   const [fileList, setFileList] = useState<any[]>([]);
+
+  // Barcode printing states
+  const [barcodeModalVisible, setBarcodeModalVisible] = useState(false);
+  const [barcodeQuantities, setBarcodeQuantities] = useState<Record<string, number>>({});
+  const [selectedBarcodeProductIds, setSelectedBarcodeProductIds] = useState<string[]>([]);
+  const [barcodeExportFormat, setBarcodeExportFormat] = useState<'pdf' | 'csv'>('pdf');
 
   useEffect(() => {
     loadCategories();
@@ -274,6 +284,120 @@ export const InventoryPage = () => {
     }
   };
 
+  const handleExportBarcodes = () => {
+    const selectedProducts = products.filter(p => selectedBarcodeProductIds.includes(p.id));
+    if (selectedProducts.length === 0) {
+      message.warning('Please select at least one product');
+      return;
+    }
+
+    if (barcodeExportFormat === 'csv') {
+      let csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += "Product Name,SKU,Barcode,Selling Price,Unit of Measure\n";
+      
+      selectedProducts.forEach(p => {
+        const qty = barcodeQuantities[p.id] || 1;
+        const barcodeVal = p.barcode || p.sku || 'N/A';
+        for (let i = 0; i < qty; i++) {
+          csvContent += `"${p.name}","${p.sku}","${barcodeVal}","${p.selling_price}","${p.unit || 'units'}"\n`;
+        }
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `barcodes_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      message.success('CSV downloaded successfully!');
+      setBarcodeModalVisible(false);
+    } else {
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const cardWidth = 60;
+      const cardHeight = 25;
+      const startX = 10;
+      const startY = 15;
+      const gapX = 5;
+      const gapY = 3;
+
+      let currentX = startX;
+      let currentY = startY;
+      let col = 0;
+      let row = 0;
+
+      const canvas = document.createElement('canvas');
+      let hasAddedLabels = false;
+
+      selectedProducts.forEach(p => {
+        const qty = barcodeQuantities[p.id] || 1;
+        const barcodeVal = p.barcode || p.sku || 'N/A';
+
+        try {
+          JsBarcode(canvas, barcodeVal, {
+            format: 'CODE128',
+            width: 1.5,
+            height: 40,
+            displayValue: true,
+            fontSize: 16
+          });
+          const imgData = canvas.toDataURL('image/png');
+
+          for (let i = 0; i < qty; i++) {
+            hasAddedLabels = true;
+            if (row >= 10) {
+              doc.addPage();
+              row = 0;
+              col = 0;
+              currentX = startX;
+              currentY = startY;
+            }
+
+            doc.rect(currentX, currentY, cardWidth, cardHeight);
+
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            const truncatedName = p.name.length > 28 ? p.name.substring(0, 25) + '...' : p.name;
+            doc.text(truncatedName, currentX + 3, currentY + 4);
+
+            doc.addImage(imgData, 'PNG', currentX + 3, currentY + 6, cardWidth - 6, cardHeight - 12);
+
+            doc.setFontSize(7);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`SKU: ${p.sku || 'N/A'}`, currentX + 3, currentY + cardHeight - 2);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`${p.selling_price?.toLocaleString()} RWF`, currentX + cardWidth - 22, currentY + cardHeight - 2);
+
+            col++;
+            if (col >= 3) {
+              col = 0;
+              row++;
+              currentX = startX;
+              currentY = currentY + cardHeight + gapY;
+            } else {
+              currentX = currentX + cardWidth + gapX;
+            }
+          }
+        } catch (err) {
+          console.error(`Failed to generate barcode for ${p.name}:`, err);
+        }
+      });
+
+      if (hasAddedLabels) {
+        doc.save(`barcodes_${Date.now()}.pdf`);
+        message.success('PDF labels downloaded successfully!');
+        setBarcodeModalVisible(false);
+      } else {
+        message.error('No barcodes could be generated.');
+      }
+    }
+  };
+
   const getStockStatus = (stock: number, threshold: number) => {
     if (stock === 0) return { color: 'red', text: 'Out of Stock', status: 'exception' as const };
     if (stock <= threshold) return { color: 'orange', text: 'Low Stock', status: 'normal' as const };
@@ -391,6 +515,23 @@ export const InventoryPage = () => {
         );
       },
     },
+    {
+      title: 'Barcode',
+      key: 'barcode_actions',
+      render: (_: any, record: Product) => (
+        <Button
+          size="small"
+          icon={<BarcodeOutlined />}
+          onClick={() => {
+            setSelectedBarcodeProductIds([record.id]);
+            setBarcodeQuantities({ [record.id]: 1 });
+            setBarcodeModalVisible(true);
+          }}
+        >
+          Print Label
+        </Button>
+      ),
+    },
     // Actions column removed - Only admin can modify inventory
     // Retailers can only add products via wholesaler invoice
   ];
@@ -405,6 +546,20 @@ export const InventoryPage = () => {
             onClick={() => loadProducts(true)}
           >
             Refresh
+          </Button>
+          <Button
+            icon={<BarcodeOutlined />}
+            onClick={() => {
+              setSelectedBarcodeProductIds(products.map(p => p.id));
+              const initialQuantities: Record<string, number> = {};
+              products.forEach(p => {
+                initialQuantities[p.id] = 1;
+              });
+              setBarcodeQuantities(initialQuantities);
+              setBarcodeModalVisible(true);
+            }}
+          >
+            Print Barcodes
           </Button>
           <Button
             type="primary"
@@ -819,6 +974,89 @@ export const InventoryPage = () => {
             ]}
           />
         </Form>
+      </Modal>
+
+      {/* Barcode Printing Modal */}
+      <Modal
+        title="Print Barcode Labels"
+        open={barcodeModalVisible}
+        onCancel={() => setBarcodeModalVisible(false)}
+        onOk={handleExportBarcodes}
+        okText="Download / Export"
+        width={700}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <Text type="secondary">
+            Select products and input the quantity of labels you wish to generate. You can export as a PDF label sheet (grid layout) or a CSV details sheet.
+          </Text>
+        </div>
+
+        <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
+          <Text strong>Export Format:</Text>
+          <Select
+            value={barcodeExportFormat}
+            onChange={(val) => setBarcodeExportFormat(val)}
+            style={{ width: 250 }}
+          >
+            <Select.Option value="pdf">PDF Label Sheet (Printable)</Select.Option>
+            <Select.Option value="csv">CSV Spreadsheet</Select.Option>
+          </Select>
+        </div>
+
+        <div style={{ border: '1px solid #f0f0f0', borderRadius: 8, padding: 12, maxHeight: 350, overflow: 'auto' }}>
+          <List
+            dataSource={products}
+            renderItem={(product) => {
+              const isSelected = selectedBarcodeProductIds.includes(product.id);
+              const qty = barcodeQuantities[product.id] || 1;
+              return (
+                <List.Item
+                  actions={[
+                    isSelected && (
+                      <div key="qty" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Text style={{ fontSize: 12 }}>Labels Needed:</Text>
+                        <InputNumber
+                          min={1}
+                          max={100}
+                          value={qty}
+                          onChange={(val) => {
+                            setBarcodeQuantities(prev => ({
+                              ...prev,
+                              [product.id]: val || 1
+                            }));
+                          }}
+                          style={{ width: 70 }}
+                        />
+                      </div>
+                    )
+                  ]}
+                >
+                  <Checkbox
+                    checked={isSelected}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedBarcodeProductIds(prev => [...prev, product.id]);
+                        if (!barcodeQuantities[product.id]) {
+                          setBarcodeQuantities(prev => ({ ...prev, [product.id]: 1 }));
+                        }
+                      } else {
+                        setSelectedBarcodeProductIds(prev => prev.filter(id => id !== product.id));
+                      }
+                    }}
+                  >
+                    <div style={{ marginLeft: 8 }}>
+                      <Text strong>{product.name}</Text>
+                      <br />
+                      <Text type="secondary" style={{ fontSize: 11 }}>
+                        SKU: {product.sku} | Barcode: {product.barcode || product.sku || 'N/A'} | Price: {product.selling_price?.toLocaleString()} RWF
+                      </Text>
+                    </div>
+                  </Checkbox>
+                </List.Item>
+              );
+            }}
+          />
+        </div>
       </Modal>
 
       <style>{`

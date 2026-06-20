@@ -352,6 +352,7 @@ export const wholesalerApi = {
   getInventory: (params?: any) => api.get("/wholesaler/inventory", { params }),
   getProducts: (params?: any) => api.get("/wholesaler/inventory", { params }),
   getCategories: () => api.get("/wholesaler/inventory/categories"),
+  generateBarcode: () => api.get("/wholesaler/inventory/generate-barcode"),
   getInventoryStats: () => api.get("/wholesaler/inventory/stats"),
   createProduct: (data: any) => api.post("/wholesaler/inventory", data),
   addInventory: (data: any) => api.post("/wholesaler/inventory", data),

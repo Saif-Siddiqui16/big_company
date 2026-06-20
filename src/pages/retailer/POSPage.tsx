@@ -80,6 +80,12 @@ const POSPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
 
+  // Barcode scan quantity modal
+  const [scanModal, setScanModal] = useState(false);
+  const [scannedProduct, setScannedProduct] = useState<Product | null>(null);
+  const [scanQuantity, setScanQuantity] = useState<number>(1);
+  const [scanLoading, setScanLoading] = useState(false);
+
   // Payment modal state
   const [paymentModal, setPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'bigshop_card' | 'momo' | 'airtel'>('bigshop_card');
@@ -171,23 +177,58 @@ const POSPage = () => {
     }
   };
 
-  // Barcode scanning
+  // Barcode scanning — opens quantity modal instead of adding directly
   const handleBarcodeScan = async (barcode: string) => {
     if (!barcode.trim()) return;
-
+    setScanLoading(true);
     try {
       const response = await retailerApi.scanBarcode(barcode);
       if (response.data?.product) {
-        addToCart(response.data.product);
-        message.success(`Added: ${response.data.product.name}`);
+        setScannedProduct(response.data.product);
+        setScanQuantity(1);
+        setScanModal(true);
       } else {
         message.warning('Product not found for this barcode');
       }
     } catch (error: any) {
       message.error(error.response?.data?.error || 'Barcode scan failed');
+    } finally {
+      setScanLoading(false);
     }
-
     setBarcodeInput('');
+    barcodeInputRef.current?.focus();
+  };
+
+  // Confirm scanned product with entered quantity
+  const confirmScanAdd = () => {
+    if (!scannedProduct) return;
+    if (!scanQuantity || scanQuantity <= 0) {
+      message.warning('Please enter a valid quantity greater than zero');
+      return;
+    }
+    if (scanQuantity > scannedProduct.stock) {
+      message.warning(`Only ${scannedProduct.stock} units available`);
+      return;
+    }
+    const rounded = Math.round(scanQuantity * 100) / 100;
+    setCart((prev) => {
+      const existing = prev.find((item) => item.id === scannedProduct.id);
+      if (existing) {
+        const newQty = Math.round((existing.quantity + rounded) * 100) / 100;
+        if (newQty > scannedProduct.stock) {
+          message.warning(`Only ${scannedProduct.stock} units available`);
+          return prev;
+        }
+        return prev.map((item) =>
+          item.id === scannedProduct.id ? { ...item, quantity: newQty } : item
+        );
+      }
+      return [...prev, { ...scannedProduct, quantity: rounded }];
+    });
+    message.success(`Added ${rounded} × ${scannedProduct.name} to cart`);
+    setScanModal(false);
+    setScannedProduct(null);
+    setScanQuantity(1);
     barcodeInputRef.current?.focus();
   };
 
@@ -231,16 +272,23 @@ const POSPage = () => {
     );
   };
 
-  const setItemQuantity = (id: string, quantity: number) => {
+  const setItemQuantity = (id: string, quantity: number | null) => {
+    if (quantity === null || quantity === undefined || isNaN(quantity)) return;
+    if (quantity <= 0) {
+      message.warning('Quantity must be greater than zero');
+      return;
+    }
+    // Round to 2 decimal places to avoid floating-point noise
+    const rounded = Math.round(quantity * 100) / 100;
     setCart((prev) =>
       prev
         .map((item) => {
           if (item.id !== id) return item;
-          if (quantity > item.stock) {
+          if (rounded > item.stock) {
             message.warning(`Only ${item.stock} units available`);
             return { ...item, quantity: item.stock };
           }
-          return { ...item, quantity: Math.max(0, quantity) };
+          return { ...item, quantity: rounded };
         })
         .filter((item) => item.quantity > 0)
     );
@@ -455,13 +503,14 @@ const POSPage = () => {
             extra={
               <Space>
                 <Input
-                  placeholder="Scan barcode"
+                  placeholder="Scan barcode → Enter qty"
                   prefix={<BarcodeOutlined />}
+                  suffix={scanLoading ? <Spin size="small" /> : null}
                   value={barcodeInput}
                   ref={barcodeInputRef}
                   onChange={(e) => setBarcodeInput(e.target.value)}
                   onPressEnter={() => handleBarcodeScan(barcodeInput)}
-                  style={{ width: 150 }}
+                  style={{ width: 170 }}
                 />
                 <Input.Search
                   placeholder="Search..."
@@ -587,27 +636,34 @@ const POSPage = () => {
                           <Text style={{ fontSize: '13px' }}>{item.name}</Text>
                         }
                         description={
-                          <Space>
-                            <Button
-                              size="small"
-                              icon={<MinusOutlined />}
-                              onClick={() => updateQuantity(item.id, -1)}
-                            />
-                            <InputNumber
-                              size="small"
-                              min={1}
-                              max={item.stock}
-                              value={item.quantity}
-                              onChange={(val) => setItemQuantity(item.id, val || 1)}
-                              style={{ width: 50 }}
-                            />
-                            <Button
-                              size="small"
-                              icon={<PlusOutlined />}
-                              onClick={() => updateQuantity(item.id, 1)}
-                              disabled={item.quantity >= item.stock}
-                            />
-                          </Space>
+                          <div>
+                            <Space align="center" style={{ marginBottom: 4 }}>
+                              <Button
+                                size="small"
+                                icon={<MinusOutlined />}
+                                onClick={() => updateQuantity(item.id, -1)}
+                              />
+                              <InputNumber
+                                size="small"
+                                min={0.01}
+                                max={item.stock}
+                                step={0.25}
+                                value={item.quantity}
+                                onChange={(val) => setItemQuantity(item.id, val)}
+                                style={{ width: 65 }}
+                                precision={2}
+                              />
+                              <Button
+                                size="small"
+                                icon={<PlusOutlined />}
+                                onClick={() => updateQuantity(item.id, 1)}
+                                disabled={item.quantity >= item.stock}
+                              />
+                            </Space>
+                            <div style={{ fontSize: '11px', color: '#8c8c8c' }}>
+                              {item.price?.toLocaleString()} RWF × {item.quantity}
+                            </div>
+                          </div>
                         }
                       />
                       <Text strong style={{ fontSize: '13px' }}>
@@ -1114,6 +1170,112 @@ const POSPage = () => {
               <div style={{ fontSize: '11px', color: '#8c8c8c' }}>For support: +250788541239 | info@big.co.rw</div>
               <div style={{ fontSize: '10px', color: '#bfbfbf', marginTop: 12 }}>PROCESSED BY Big Innovation Group Ltd</div>
             </div>
+          </div>
+        )}
+      </Modal>
+      {/* Barcode Scan — Quantity Entry Modal */}
+      <Modal
+        title={
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <BarcodeOutlined style={{ color: '#1890ff' }} />
+            Product Found — Enter Quantity
+          </span>
+        }
+        open={scanModal}
+        onCancel={() => {
+          setScanModal(false);
+          setScannedProduct(null);
+          setScanQuantity(1);
+          barcodeInputRef.current?.focus();
+        }}
+        onOk={confirmScanAdd}
+        okText="Add to Cart"
+        okButtonProps={{ disabled: !scanQuantity || scanQuantity <= 0 }}
+        cancelText="Cancel"
+        width={420}
+        centered
+      >
+        {scannedProduct && (
+          <div>
+            {/* Product Info */}
+            <div style={{
+              background: '#f8fafc',
+              borderRadius: 10,
+              padding: '16px 20px',
+              marginBottom: 20,
+              border: '1px solid #e2e8f0'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {scannedProduct.image ? (
+                  <img
+                    src={scannedProduct.image}
+                    alt={scannedProduct.name}
+                    style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: 8 }}
+                  />
+                ) : (
+                  <div style={{
+                    width: 52, height: 52, background: '#e0f2fe',
+                    borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    <BarcodeOutlined style={{ fontSize: 24, color: '#0ea5e9' }} />
+                  </div>
+                )}
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 16 }}>{scannedProduct.name}</div>
+                  <div style={{ color: '#64748b', fontSize: 12 }}>SKU: {scannedProduct.sku}</div>
+                  <div style={{ color: '#0ea5e9', fontWeight: 600, fontSize: 14 }}>
+                    {scannedProduct.price?.toLocaleString()} RWF / unit
+                  </div>
+                  <div style={{ color: '#64748b', fontSize: 12 }}>
+                    Stock available: <strong>{scannedProduct.stock}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quantity Input */}
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontWeight: 600, marginBottom: 8, color: '#1e293b' }}>
+                Enter Quantity
+              </div>
+              <InputNumber
+                autoFocus
+                value={scanQuantity}
+                min={0.01}
+                max={scannedProduct.stock}
+                step={0.25}
+                precision={2}
+                onChange={(val) => setScanQuantity(val ?? 1)}
+                onPressEnter={confirmScanAdd}
+                style={{ width: '100%', fontSize: 18, height: 44 }}
+                size="large"
+                placeholder="e.g. 0.5, 1, 2.25"
+              />
+              <div style={{ color: '#64748b', fontSize: 12, marginTop: 4 }}>
+                Tip: You can enter decimal values like 0.5, 0.25, 1.5
+              </div>
+            </div>
+
+            {/* Live Price Preview */}
+            {scanQuantity > 0 && (
+              <div style={{
+                marginTop: 16,
+                padding: '12px 16px',
+                background: '#0ea5e9',
+                borderRadius: 8,
+                color: 'white',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <span style={{ fontSize: 13, opacity: 0.9 }}>
+                  {scannedProduct.price?.toLocaleString()} × {scanQuantity}
+                </span>
+                <span style={{ fontWeight: 800, fontSize: 20 }}>
+                  {(scannedProduct.price * (Math.round(scanQuantity * 100) / 100)).toLocaleString()} RWF
+                </span>
+              </div>
+            )}
           </div>
         )}
       </Modal>
