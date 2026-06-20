@@ -104,6 +104,24 @@ export const InventoryPage = () => {
   const [form] = Form.useForm();
   const [actionLoading, setActionLoading] = useState(false);
   const [fileList, setFileList] = useState<any[]>([]);
+  const [generatingBarcode, setGeneratingBarcode] = useState(false);
+
+  const handleGenerateBarcode = async () => {
+    setGeneratingBarcode(true);
+    try {
+      const response = await wholesalerApi.generateBarcode();
+      if (response.data?.barcode) {
+        form.setFieldsValue({ barcode: response.data.barcode });
+        message.success('Barcode generated successfully!');
+      } else {
+        throw new Error('Failed to generate barcode');
+      }
+    } catch (error: any) {
+      message.error(error.response?.data?.error || 'Failed to generate barcode');
+    } finally {
+      setGeneratingBarcode(false);
+    }
+  };
 
   const fetchProducts = async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
@@ -647,6 +665,36 @@ export const InventoryPage = () => {
                   <Select.Option value="boxes">Boxes</Select.Option>
                 </Select>
               </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="invoice_number"
+                label="Wholesaler Invoice No."
+                rules={[{ required: true, message: 'Please enter invoice number' }]}
+                tooltip="Used by retailers to add this product to their inventory"
+              >
+                <Input placeholder="e.g. WHL-INV-001" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="barcode"
+                label="Barcode"
+                rules={[{ required: true, message: 'Please enter or generate barcode' }]}
+              >
+                <Input placeholder="Scan or enter barcode" />
+              </Form.Item>
+              <Button
+                onClick={handleGenerateBarcode}
+                type="primary"
+                ghost
+                loading={generatingBarcode}
+                style={{ width: '100%', marginTop: '-8px', marginBottom: '8px' }}
+              >
+                Generate Barcode
+              </Button>
             </Col>
           </Row>
           <Form.Item label="Product Image">
