@@ -201,7 +201,7 @@ const FloatingParticles: React.FC = () => {
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, setUserFromToken } = useAuth();
 
   // Get role from URL or default to consumer
   const urlRole = searchParams.get('role');
@@ -304,13 +304,21 @@ export const LoginPage: React.FC = () => {
     }
     setIsResettingPassword(true);
     try {
-      const token = localStorage.getItem('bigcompany_token');
-      const endpoint = `${API_URL}/${activeRole}/auth/update-password`;
+      const token = localStorage.getItem('temp_token') || localStorage.getItem('bigcompany_token');
+      const rolePrefix = activeRole === 'consumer' ? 'store' : activeRole;
+      const endpoint = `${API_URL}/${rolePrefix}/auth/update-password`;
       await axios.put(
         endpoint,
         { old_password: tempPasswordUsed, new_password: newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      
+      if (token) {
+        setUserFromToken(token, activeRole);
+        localStorage.removeItem('temp_token');
+        localStorage.removeItem('temp_role');
+      }
+      
       message.success('Password updated successfully! Welcome to your dashboard.');
       setShowResetModal(false);
       navigate(config.redirect);
@@ -334,7 +342,11 @@ export const LoginPage: React.FC = () => {
       <div className="relative z-10 w-full max-w-md">
         {/* Back button */}
         <button
-          onClick={() => navigate('/')}
+          onClick={() => {
+            localStorage.removeItem('temp_token');
+            localStorage.removeItem('temp_role');
+            navigate('/');
+          }}
           className="flex items-center gap-2 text-white bg-black/20 backdrop-blur-md px-4 py-2 rounded-full hover:bg-black/30 mb-6 transition-all w-fit"
         >
           <ArrowLeftIcon />
@@ -418,7 +430,7 @@ export const LoginPage: React.FC = () => {
                         value={pin}
                         onChange={(e) => setPin(e.target.value)}
                         placeholder="Enter your 4-6 digit PIN"
-                        maxLength={6}
+                        maxLength={20}
                         className="w-full pl-12 pr-12 py-3 rounded-xl border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
                         required={authMethod === 'phone'}
                       />

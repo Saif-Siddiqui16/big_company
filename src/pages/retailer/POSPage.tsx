@@ -318,14 +318,14 @@ const POSPage = () => {
     setDiscount(0);
   };
 
-  // Calculate totals with 18% VAT
+  // Calculate inclusive 18% VAT
   const TAX_RATE = 0.18; // 18% VAT
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const taxAmount = subtotal * TAX_RATE;
+  const taxAmount = subtotal - (subtotal / (1 + TAX_RATE));
   const discountAmount = discountType === 'percent'
     ? (subtotal * discount / 100)
     : discount;
-  const total = Math.max(0, subtotal + taxAmount - discountAmount);
+  const total = Math.max(0, subtotal - discountAmount);
   const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   // Complete the sale
@@ -720,8 +720,8 @@ const POSPage = () => {
                     <Text>{subtotal.toLocaleString()} RWF</Text>
                   </Row>
                   <Row justify="space-between" style={{ marginBottom: 8 }}>
-                    <Text type="secondary">Tax (18% VAT):</Text>
-                    <Text type="secondary">+{taxAmount.toLocaleString()} RWF</Text>
+                    <Text type="secondary">Tax (18% VAT Included):</Text>
+                    <Text type="secondary">{taxAmount.toLocaleString()} RWF</Text>
                   </Row>
                   {discountAmount > 0 && (
                     <Row justify="space-between" style={{ marginBottom: 8 }}>
@@ -1044,15 +1044,13 @@ const POSPage = () => {
           <div className="modern-receipt-print" style={{ color: '#262626' }}>
             {/* Header / Branding */}
             <div style={{ textAlign: 'center', marginBottom: 16 }}>
-              <div style={{ position: 'relative', height: '85px', overflow: 'hidden', width: '260px', margin: '0 auto 4px' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '70px', marginBottom: '8px' }}>
                 <img
                   src="/logo-big.png"
                   alt="BIG"
                   style={{
-                    position: 'absolute',
-                    top: '50%', left: '50%',
-                    transform: 'translate(-50%, -50%) scale(2.4)',
-                    width: '200px',
+                    height: '100%',
+                    maxWidth: '100%',
                     objectFit: 'contain'
                   }}
                 />
@@ -1138,8 +1136,8 @@ const POSPage = () => {
                 <Text>{lastSale.subtotal?.toLocaleString()} RWF</Text>
               </Row>
               <Row justify="space-between" style={{ marginBottom: 4 }}>
-                <Text type="secondary">Tax (18% VAT)</Text>
-                <Text>+{lastSale.tax?.toLocaleString()} RWF</Text>
+                <Text type="secondary">Tax (18% VAT Included)</Text>
+                <Text>{lastSale.tax?.toLocaleString()} RWF</Text>
               </Row>
               {lastSale.discount > 0 && (
                 <Row justify="space-between" style={{ marginBottom: 4, color: '#f5222d' }}>

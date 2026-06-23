@@ -23,6 +23,7 @@ import {
   Avatar,
   ConfigProvider,
   Tooltip,
+  InputNumber,
 } from 'antd';
 import {
   ShoppingCartOutlined,
@@ -618,7 +619,27 @@ export const ShopPage = () => {
                             q > 0 ? (
                               <Space style={{ background: '#f0fdf4', borderRadius: 10, padding: 4 }}>
                                 <Button size="small" type="text" icon={<MinusOutlined />} onClick={() => updateQuantity(p.id, q - 1)} />
-                                <Text strong>{q}</Text>
+                                <InputNumber
+                                  size="small"
+                                  min={1}
+                                  max={stock}
+                                  value={q}
+                                  onChange={(val) => {
+                                    if (val === null || val === undefined || isNaN(val)) return;
+                                    const rounded = Math.round(val);
+                                    if (rounded <= 0) {
+                                      updateQuantity(p.id, 0);
+                                    } else if (rounded > stock) {
+                                      message.warning(`Only ${stock} units available in stock.`);
+                                      updateQuantity(p.id, stock);
+                                    } else {
+                                      updateQuantity(p.id, rounded);
+                                    }
+                                  }}
+                                  style={{ width: 45, textAlign: 'center' }}
+                                  bordered={false}
+                                  controls={false}
+                                />
                                 <Button size="small" type="text" icon={<PlusOutlined />} onClick={() => {
                                   if (q >= stock) {
                                     message.warning(`Only ${stock} units available in stock.`);
@@ -782,8 +803,55 @@ export const ShopPage = () => {
                   <Card key={item.id} size="small">
                     <Row align="middle" gutter={12}>
                       <Col span={4}><Avatar src={item.image} shape="square" /></Col>
-                      <Col span={12}><Text strong>{item.name}</Text><div>{formatPrice(item.price)}</div></Col>
-                      <Col span={5} style={{ textAlign: 'right' }}><Text strong>x{item.quantity}</Text></Col>
+                      <Col span={9}><Text strong>{item.name}</Text><div>{formatPrice(item.price)}</div></Col>
+                      <Col span={8} style={{ textAlign: 'right' }}>
+                        <Space align="center" size={2}>
+                          <Button
+                            size="small"
+                            type="text"
+                            icon={<MinusOutlined />}
+                            onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                            style={{ padding: 0, width: 20, height: 20 }}
+                          />
+                          <InputNumber
+                            size="small"
+                            min={1}
+                            value={item.quantity}
+                            onChange={(val) => {
+                              if (val === null || val === undefined || isNaN(val)) return;
+                              const rounded = Math.round(val);
+                              const prod = products.find(p => p.id === item.productId || String(p.id) === String(item.productId));
+                              const availableStock = prod ? (prod.stock !== undefined ? prod.stock : (prod.variants?.[0]?.inventory_quantity || 0)) : 999;
+                              if (rounded <= 0) {
+                                removeItem(item.productId);
+                              } else if (rounded > availableStock) {
+                                message.warning(`Only ${availableStock} units available in stock.`);
+                                updateQuantity(item.productId, availableStock);
+                              } else {
+                                updateQuantity(item.productId, rounded);
+                              }
+                            }}
+                            style={{ width: 40, textAlign: 'center' }}
+                            bordered={false}
+                            controls={false}
+                          />
+                          <Button
+                            size="small"
+                            type="text"
+                            icon={<PlusOutlined />}
+                            onClick={() => {
+                              const prod = products.find(p => p.id === item.productId || String(p.id) === String(item.productId));
+                              const availableStock = prod ? (prod.stock !== undefined ? prod.stock : (prod.variants?.[0]?.inventory_quantity || 0)) : 999;
+                              if (item.quantity >= availableStock) {
+                                message.warning(`Only ${availableStock} units available in stock.`);
+                                return;
+                              }
+                              updateQuantity(item.productId, item.quantity + 1);
+                            }}
+                            style={{ padding: 0, width: 20, height: 20 }}
+                          />
+                        </Space>
+                      </Col>
                       <Col span={3} style={{ textAlign: 'right' }}>
                         <Button
                           type="text"
