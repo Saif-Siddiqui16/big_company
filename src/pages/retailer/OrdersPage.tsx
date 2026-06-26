@@ -781,8 +781,8 @@ export const OrdersPage = () => {
               </head>
               <body>
                 <div class="header">
-                  <div style="position: relative; height: 85px; overflow: hidden; width: 260px; margin: 0 auto 4px;">
-                    <img src="/logo-big.png" alt="BIG" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(2.4); width: 200px; object-fit: contain;" />
+                  <div style="display: flex; justify-content: center; align-items: center; height: 70px; margin: 0 auto 8px;">
+                    <img src="/logo-big.png" alt="BIG" style="height: 100%; max-width: 100%; object-fit: contain;" />
                   </div>
                   <h1 class="company-name">Big Innovation Group Ltd</h1>
                   <p style="margin: 2px 0; color: #666; font-size: 13px;">Kigali, Rwanda | +250788541239 | info@big.co.rw</p>

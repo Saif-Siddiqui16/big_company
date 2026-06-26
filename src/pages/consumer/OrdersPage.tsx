@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { jsPDF } from 'jspdf';
 import {
   Card,
   Row,
@@ -251,8 +252,167 @@ export const OrdersPage: React.FC = () => {
 
   const handleDownloadReceipt = () => {
     if (!selectedOrder) return;
-    message.success(`Receipt for ${selectedOrder.order_number} downloaded`);
-    // TODO: Implement actual PDF download
+
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const img = new Image();
+    img.src = '/logo-big.png';
+
+    const generate = (imgData?: string, imgWidth?: number, imgHeight?: number) => {
+      try {
+        const pageWidth = doc.internal.pageSize.getWidth();
+        let y = 20;
+
+        // Draw logo
+        if (imgData && imgWidth && imgHeight) {
+          const targetWidth = 45;
+          const targetHeight = targetWidth * (imgHeight / imgWidth);
+          doc.addImage(imgData, 'PNG', 20, y, targetWidth, targetHeight);
+          y += targetHeight + 6;
+        } else {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(20);
+          doc.text('BIG', 20, y);
+          y += 10;
+        }
+
+        // Company Details
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(24, 144, 255); // #1890ff
+        doc.text('Big Innovation Group Ltd', 20, y);
+        y += 6;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.text('Kigali, Rwanda | +250788541239 | info@big.co.rw', 20, y);
+        y += 8;
+
+        // Border line
+        doc.setDrawColor(24, 144, 255);
+        doc.setLineWidth(0.5);
+        doc.line(20, y, pageWidth - 20, y);
+        y += 10;
+
+        // Receipt title
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Official Receipt', 20, y);
+        y += 8;
+
+        // Info details
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.text(`Receipt #: ${selectedOrder.order_number}`, 20, y);
+        doc.text(`Date: ${formatDate(selectedOrder.created_at)}`, pageWidth - 80, y);
+        y += 6;
+
+        doc.text(`Status: ${(selectedOrder.status || '').toUpperCase()}`, 20, y);
+        doc.text(`Payment: ${selectedOrder.payment_method || 'N/A'}`, pageWidth - 80, y);
+        y += 10;
+
+        // Store details
+        doc.setFont('helvetica', 'bold');
+        doc.text('Store Details:', 20, y);
+        y += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Store Name: ${selectedOrder.retailer?.name || 'N/A'}`, 20, y);
+        y += 5;
+        doc.text(`Location: ${selectedOrder.retailer?.location || 'N/A'}`, 20, y);
+        y += 10;
+
+        // Table Header
+        doc.setFont('helvetica', 'bold');
+        doc.text('Item Description', 20, y);
+        doc.text('Qty', 110, y, { align: 'center' });
+        doc.text('Price (RWF)', 140, y, { align: 'right' });
+        doc.text('Total (RWF)', pageWidth - 20, y, { align: 'right' });
+        y += 4;
+
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.3);
+        doc.line(20, y, pageWidth - 20, y);
+        y += 6;
+
+        // Table Items
+        doc.setFont('helvetica', 'normal');
+        selectedOrder.items.forEach((item) => {
+          if (y > doc.internal.pageSize.getHeight() - 30) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.text(item.product_name || 'Product', 20, y);
+          doc.text(String(item.quantity), 110, y, { align: 'center' });
+          doc.text((item.unit_price || 0).toLocaleString(), 140, y, { align: 'right' });
+          doc.text((item.total || 0).toLocaleString(), pageWidth - 20, y, { align: 'right' });
+          y += 7;
+        });
+
+        // Totals
+        y += 3;
+        doc.setDrawColor(0, 0, 0);
+        doc.line(20, y, pageWidth - 20, y);
+        y += 8;
+
+        doc.text('Subtotal:', 130, y);
+        doc.text((selectedOrder.subtotal || 0).toLocaleString() + ' RWF', pageWidth - 20, y, { align: 'right' });
+        y += 6;
+
+        if (selectedOrder.delivery_fee && selectedOrder.delivery_fee > 0) {
+          doc.text('Delivery Fee:', 130, y);
+          doc.text((selectedOrder.delivery_fee).toLocaleString() + ' RWF', pageWidth - 20, y, { align: 'right' });
+          y += 6;
+        }
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.text('TOTAL:', 130, y);
+        doc.text((selectedOrder.total || 0).toLocaleString() + ' RWF', pageWidth - 20, y, { align: 'right' });
+        y += 15;
+
+        // Footer
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(150, 150, 150);
+        doc.text('Thank you for shopping with Big Innovation Group Ltd!', pageWidth / 2, y, { align: 'center' });
+        y += 5;
+        doc.text('For support: +250788541239 | info@big.co.rw', pageWidth / 2, y, { align: 'center' });
+
+        doc.save(`receipt_${selectedOrder.order_number}.pdf`);
+        message.success(`Receipt for ${selectedOrder.order_number} downloaded`);
+      } catch (err) {
+        console.error(err);
+        message.error('Failed to generate PDF download');
+      }
+    };
+
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        try {
+          const dataURL = canvas.toDataURL('image/png');
+          generate(dataURL, img.naturalWidth, img.naturalHeight);
+        } catch (e) {
+          generate();
+        }
+      } else {
+        generate();
+      }
+    };
+
+    img.onerror = () => {
+      generate();
+    };
   };
 
   const getPaymentMethodBadge = (paymentMethod: string | undefined) => {
@@ -909,15 +1069,13 @@ export const OrdersPage: React.FC = () => {
           <div style={{ padding: '20px', background: 'white' }}>
             {/* Receipt Header */}
             <div style={{ textAlign: 'center', marginBottom: 12, borderBottom: '2px solid #1890ff', paddingBottom: 10 }}>
-              <div style={{ position: 'relative', height: '85px', overflow: 'hidden', margin: '0 auto 4px', width: '260px' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '70px', marginBottom: '8px' }}>
                 <img
                   src="/logo-big.png"
                   alt="BIG"
                   style={{
-                    position: 'absolute',
-                    top: '50%', left: '50%',
-                    transform: 'translate(-50%, -50%) scale(2.4)',
-                    width: '200px',
+                    height: '100%',
+                    maxWidth: '100%',
                     objectFit: 'contain'
                   }}
                 />
@@ -984,10 +1142,10 @@ export const OrdersPage: React.FC = () => {
                 <Col><Text>Subtotal:</Text></Col>
                 <Col><Text>{formatPrice(selectedOrder.subtotal)}</Text></Col>
               </Row>
-              {selectedOrder.delivery_fee && selectedOrder.delivery_fee > 0 && (
+              {(selectedOrder.delivery_fee || 0) > 0 && (
                 <Row justify="space-between" style={{ marginBottom: 4 }}>
                   <Col><Text>Delivery Fee:</Text></Col>
-                  <Col><Text>{formatPrice(selectedOrder.delivery_fee)}</Text></Col>
+                  <Col><Text>{formatPrice(selectedOrder.delivery_fee || 0)}</Text></Col>
                 </Row>
               )}
               <Row justify="space-between" style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #000' }}>

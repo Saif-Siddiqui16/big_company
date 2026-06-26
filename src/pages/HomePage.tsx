@@ -218,6 +218,11 @@ export const HomePage: React.FC = () => {
     controls.start('visible');
   }, [controls]);
 
+  useEffect(() => {
+    localStorage.removeItem('temp_token');
+    localStorage.removeItem('temp_role');
+  }, []);
+
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
     setCopiedField(field);

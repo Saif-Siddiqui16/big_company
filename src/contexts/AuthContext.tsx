@@ -73,6 +73,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Ensure role is set
       user.role = role;
 
+      if (response.require_password_reset) {
+        localStorage.setItem('temp_token', response.access_token);
+        localStorage.setItem('temp_role', role);
+        localStorage.setItem('temp_user', JSON.stringify(user));
+        setState({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          isLoading: false,
+        });
+        return { require_password_reset: true };
+      }
+
       localStorage.setItem(TOKEN_KEY, response.access_token);
       localStorage.setItem(USER_KEY, JSON.stringify(user));
 
@@ -87,7 +100,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isAuthenticated: true,
         isLoading: false,
       });
-      return { require_password_reset: response.require_password_reset };
+      return { require_password_reset: false };
     } catch (error) {
       setState(prev => ({ ...prev, isLoading: false }));
       throw error;
@@ -98,7 +111,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Parse JWT to get user info
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      const user: User = {
+      let user: User = {
         id: payload.id || 'unknown',
         email: payload.email || 'unknown',
         role,
@@ -106,6 +119,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         shop_name: payload.shop_name,
         company_name: payload.company_name,
       };
+
+      // Retrieve and merge full user details if available
+      const tempUserStr = localStorage.getItem('temp_user');
+      if (tempUserStr) {
+        try {
+          const tempUser = JSON.parse(tempUserStr);
+          user = { ...user, ...tempUser };
+        } catch (e) {}
+        localStorage.removeItem('temp_user');
+      }
 
       localStorage.setItem(TOKEN_KEY, token);
       localStorage.setItem(USER_KEY, JSON.stringify(user));

@@ -152,6 +152,12 @@ const EmailTemplateManagementPage: React.FC = () => {
       render: (text: string) => <Tag color="orange">{(text || 'CUSTOMER').toUpperCase()}</Tag>
     },
     {
+      title: 'Channel',
+      dataIndex: 'channel',
+      key: 'channel',
+      render: (text: string) => <Tag color={text === 'SMS' ? 'purple' : 'cyan'}>{(text || 'EMAIL').toUpperCase()}</Tag>
+    },
+    {
       title: 'Trigger Action',
       dataIndex: 'triggerName',
       key: 'triggerName',
@@ -314,6 +320,18 @@ const EmailTemplateManagementPage: React.FC = () => {
               <Option value="RETAILER">Retailer</Option>
               <Option value="WHOLESALER">Wholesaler</Option>
               <Option value="SHARED">Multiple/All (Shared)</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="channel"
+            label="Delivery Channel"
+            rules={[{ required: true, message: 'Please select delivery channel' }]}
+            initialValue="EMAIL"
+          >
+            <Select placeholder="Select delivery channel">
+              <Option value="EMAIL">Email</Option>
+              <Option value="SMS">SMS</Option>
             </Select>
           </Form.Item>
 

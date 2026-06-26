@@ -47,6 +47,7 @@ interface Product {
   stock: number;
   barcode?: string;
   image?: string;
+  unit?: string;
 }
 
 interface CartItem extends Product {
@@ -210,11 +211,22 @@ const POSPage = () => {
       message.warning(`Only ${scannedProduct.stock} units available`);
       return;
     }
-    const rounded = Math.round(scanQuantity * 100) / 100;
+    const isDecimalAllowed = scannedProduct.unit?.toLowerCase() === 'kg' || scannedProduct.unit?.toLowerCase() === 'liters';
+    const rounded = isDecimalAllowed
+      ? Math.round(scanQuantity * 100) / 100
+      : Math.round(scanQuantity);
+
+    if (rounded <= 0) {
+      message.warning('Please enter a valid quantity greater than zero');
+      return;
+    }
+
     setCart((prev) => {
       const existing = prev.find((item) => item.id === scannedProduct.id);
       if (existing) {
-        const newQty = Math.round((existing.quantity + rounded) * 100) / 100;
+        const newQty = isDecimalAllowed
+          ? Math.round((existing.quantity + rounded) * 100) / 100
+          : Math.round(existing.quantity + rounded);
         if (newQty > scannedProduct.stock) {
           message.warning(`Only ${scannedProduct.stock} units available`);
           return prev;
@@ -278,12 +290,15 @@ const POSPage = () => {
       message.warning('Quantity must be greater than zero');
       return;
     }
-    // Round to 2 decimal places to avoid floating-point noise
-    const rounded = Math.round(quantity * 100) / 100;
     setCart((prev) =>
       prev
         .map((item) => {
           if (item.id !== id) return item;
+          const isDecimalAllowed = item.unit?.toLowerCase() === 'kg' || item.unit?.toLowerCase() === 'liters';
+          const rounded = isDecimalAllowed
+            ? Math.round(quantity * 100) / 100
+            : Math.round(quantity);
+          if (rounded <= 0) return item;
           if (rounded > item.stock) {
             message.warning(`Only ${item.stock} units available`);
             return { ...item, quantity: item.stock };
@@ -303,14 +318,14 @@ const POSPage = () => {
     setDiscount(0);
   };
 
-  // Calculate totals with 18% VAT
+  // Calculate inclusive 18% VAT
   const TAX_RATE = 0.18; // 18% VAT
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const taxAmount = subtotal * TAX_RATE;
+  const taxAmount = subtotal - (subtotal / (1 + TAX_RATE));
   const discountAmount = discountType === 'percent'
     ? (subtotal * discount / 100)
     : discount;
-  const total = Math.max(0, subtotal + taxAmount - discountAmount);
+  const total = Math.max(0, subtotal - discountAmount);
   const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   // Complete the sale
@@ -656,13 +671,13 @@ const POSPage = () => {
                               />
                               <InputNumber
                                 size="small"
-                                min={0.01}
+                                min={item.unit?.toLowerCase() === 'kg' || item.unit?.toLowerCase() === 'liters' ? 0.01 : 1}
                                 max={item.stock}
-                                step={0.25}
+                                step={item.unit?.toLowerCase() === 'kg' || item.unit?.toLowerCase() === 'liters' ? 0.25 : 1}
                                 value={item.quantity}
                                 onChange={(val) => setItemQuantity(item.id, val)}
                                 style={{ width: 65 }}
-                                precision={2}
+                                precision={item.unit?.toLowerCase() === 'kg' || item.unit?.toLowerCase() === 'liters' ? 2 : 0}
                               />
                               <Button
                                 size="small"
@@ -716,8 +731,8 @@ const POSPage = () => {
                     <Text>{subtotal.toLocaleString()} RWF</Text>
                   </Row>
                   <Row justify="space-between" style={{ marginBottom: 8 }}>
-                    <Text type="secondary">Tax (18% VAT):</Text>
-                    <Text type="secondary">+{taxAmount.toLocaleString()} RWF</Text>
+                    <Text type="secondary">Tax (18% VAT Included):</Text>
+                    <Text type="secondary">{taxAmount.toLocaleString()} RWF</Text>
                   </Row>
                   {discountAmount > 0 && (
                     <Row justify="space-between" style={{ marginBottom: 8 }}>
@@ -1149,8 +1164,8 @@ const POSPage = () => {
                 <Text>{lastSale.subtotal?.toLocaleString()} RWF</Text>
               </Row>
               <Row justify="space-between" style={{ marginBottom: 4 }}>
-                <Text type="secondary">Tax (18% VAT)</Text>
-                <Text>+{lastSale.tax?.toLocaleString()} RWF</Text>
+                <Text type="secondary">Tax (18% VAT Included)</Text>
+                <Text>{lastSale.tax?.toLocaleString()} RWF</Text>
               </Row>
               {lastSale.discount > 0 && (
                 <Row justify="space-between" style={{ marginBottom: 4, color: '#f5222d' }}>
@@ -1267,18 +1282,20 @@ const POSPage = () => {
               <InputNumber
                 autoFocus
                 value={scanQuantity}
-                min={0.01}
+                min={scannedProduct.unit?.toLowerCase() === 'kg' || scannedProduct.unit?.toLowerCase() === 'liters' ? 0.01 : 1}
                 max={scannedProduct.stock}
-                step={0.25}
-                precision={2}
+                step={scannedProduct.unit?.toLowerCase() === 'kg' || scannedProduct.unit?.toLowerCase() === 'liters' ? 0.25 : 1}
+                precision={scannedProduct.unit?.toLowerCase() === 'kg' || scannedProduct.unit?.toLowerCase() === 'liters' ? 2 : 0}
                 onChange={(val) => setScanQuantity(val ?? 1)}
                 onPressEnter={confirmScanAdd}
                 style={{ width: '100%', fontSize: 18, height: 44 }}
                 size="large"
-                placeholder="e.g. 0.5, 1, 2.25"
+                placeholder={scannedProduct.unit?.toLowerCase() === 'kg' || scannedProduct.unit?.toLowerCase() === 'liters' ? "e.g. 0.5, 1, 2.25" : "e.g. 1, 2, 3"}
               />
               <div style={{ color: '#64748b', fontSize: 12, marginTop: 4 }}>
-                Tip: You can enter decimal values like 0.5, 0.25, 1.5
+                {scannedProduct.unit?.toLowerCase() === 'kg' || scannedProduct.unit?.toLowerCase() === 'liters'
+                  ? "Tip: You can enter decimal values like 0.5, 0.25, 1.5"
+                  : "Tip: This product requires integer/whole-number quantities (e.g. 1, 2, 5)"}
               </div>
             </div>
 
