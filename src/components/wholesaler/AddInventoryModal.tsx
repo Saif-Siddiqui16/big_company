@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, InputNumber, Select, Row, Col, message, Upload, Button } from 'antd';
+import { Modal, Form, Input, InputNumber, Select, Row, Col, message, Upload, Button, Checkbox, Divider } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import { wholesalerApi } from '../../services/apiService';
 
@@ -72,6 +72,10 @@ export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
     const handleSubmit = async () => {
         try {
             const values = await form.validateFields();
+            if (!values.supplierCost && !values.costPerPurchaseUnit) {
+                message.error('Please enter either Supplier Cost Price or Cost per Purchase Unit');
+                return;
+            }
             setLoading(true);
 
             // Add image to values if available
@@ -171,10 +175,9 @@ export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
                 <Row gutter={16}>
                     <Col span={12}>
                         <Form.Item
-                            name="cost_price"
+                            name="supplierCost"
                             label="Supplier Cost Price (RWF)"
-                            rules={[{ required: true, message: 'Please enter cost price' }]}
-                            tooltip="The price you pay to the supplier/manufacturer"
+                            tooltip="The price paid per base unit (optional if Cost per Purchase Unit is provided)"
                         >
                             <InputNumber
                                 style={{ width: '100%' }}
@@ -186,17 +189,57 @@ export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
                     </Col>
                     <Col span={12}>
                         <Form.Item
-                            name="wholesale_price"
-                            label="Wholesale Selling Price (RWF)"
-                            rules={[{ required: true, message: 'Please enter selling price' }]}
-                            tooltip="The price you charge retailers"
+                            name="taxType"
+                            label="Tax Type"
+                            rules={[{ required: true, message: 'Please select tax type' }]}
+                            tooltip="Select the legal tax category for this product"
                         >
-                            <InputNumber
-                                style={{ width: '100%' }}
-                                min={0}
-                                formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                                parser={value => value!.replace(/\$\s?|(,*)/g, '') as any}
-                            />
+                            <Select placeholder="Select tax type">
+                                <Select.Option value="A">Type A (Exempted)</Select.Option>
+                                <Select.Option value="B">Type B (Standard VAT 18%)</Select.Option>
+                                <Select.Option value="C">Type C (Zero-Rated 0%)</Select.Option>
+                                <Select.Option value="D">Type D (Excise Duty)</Select.Option>
+                            </Select>
+                        </Form.Item>
+                    </Col>
+                </Row>
+
+                <Divider orientation="left" style={{ margin: '12px 0', fontSize: '14px', color: '#1890ff' }}>Multi-Unit of Measure (Multi-UOM)</Divider>
+                <Row gutter={16}>
+                    <Col span={6}>
+                        <Form.Item
+                            name="purchaseUnit"
+                            label="Purchase Unit"
+                            tooltip="e.g. Sack, Carton"
+                        >
+                            <Input placeholder="e.g. Sack" />
+                        </Form.Item>
+                    </Col>
+                    <Col span={6}>
+                        <Form.Item
+                            name="baseUnit"
+                            label="Base Unit"
+                            tooltip="e.g. Kilogram, Piece"
+                        >
+                            <Input placeholder="e.g. kg" />
+                        </Form.Item>
+                    </Col>
+                    <Col span={6}>
+                        <Form.Item
+                            name="conversionFactor"
+                            label="Conversion Factor"
+                            tooltip="How many base units in one purchase unit (e.g. 25)"
+                        >
+                            <InputNumber style={{ width: '100%' }} min={1} placeholder="e.g. 25" />
+                        </Form.Item>
+                    </Col>
+                    <Col span={6}>
+                        <Form.Item
+                            name="costPerPurchaseUnit"
+                            label="Cost / Purchase Unit"
+                            tooltip="Supplier price per purchase unit (e.g. 40000 RWF)"
+                        >
+                            <InputNumber style={{ width: '100%' }} min={0} placeholder="e.g. 40000" />
                         </Form.Item>
                     </Col>
                 </Row>
@@ -209,6 +252,11 @@ export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
                             rules={[{ required: true, message: 'Please enter initial stock' }]}
                         >
                             <InputNumber style={{ width: '100%' }} min={0} />
+                        </Form.Item>
+                        <Form.Item name="stockInPurchaseUnits" valuePropName="checked" noStyle>
+                            <Checkbox style={{ fontSize: '12px', marginTop: '-8px', display: 'block', marginBottom: '12px' }}>
+                                Stock quantity is in Purchase Units (convert to Base Units)
+                            </Checkbox>
                         </Form.Item>
                     </Col>
                     <Col span={12}>

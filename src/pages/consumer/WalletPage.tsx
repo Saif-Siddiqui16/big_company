@@ -764,7 +764,28 @@ const ConsumerWalletPage: React.FC = () => {
 
                    {selectedLoan && (
                        <Alert 
-                           message={`Outstanding Balance: ${selectedLoan.remainingBalance?.toLocaleString()} RWF`} 
+                           message={
+                               <div>
+                                   <strong>Outstanding Balance:</strong> {selectedLoan.remainingBalance?.toLocaleString()} RWF<br/>
+                                   <strong>Interest Rate:</strong> {selectedLoan.interest_rate || 0}%<br/>
+                                   <strong>Due Date:</strong> {selectedLoan.dueDate ? new Date(selectedLoan.dueDate).toLocaleDateString() : 'N/A'}
+                               </div>
+                           } 
+                           description={
+                               selectedLoan.schedule && selectedLoan.schedule.length > 0 ? (
+                                   <div style={{ marginTop: 8 }}>
+                                       <strong>Repayment Schedule:</strong>
+                                       <ul style={{ paddingLeft: 20, margin: 0 }}>
+                                           {selectedLoan.schedule.map((s: any, idx: number) => (
+                                               <li key={idx}>
+                                                   {new Date(s.date).toLocaleDateString()}: {s.amount?.toLocaleString()} RWF 
+                                                   <Tag color={s.status === 'paid' ? 'green' : s.status === 'overdue' ? 'red' : 'default'} style={{ marginLeft: 8 }}>{s.status}</Tag>
+                                               </li>
+                                           ))}
+                                       </ul>
+                                   </div>
+                               ) : null
+                           }
                            type="info" 
                            showIcon 
                            style={{ marginBottom: '16px' }} 
@@ -786,10 +807,10 @@ const ConsumerWalletPage: React.FC = () => {
                        <InputNumber 
                            style={{ width: '100%' }} 
                            placeholder="Enter amount to repay" 
-                           min={1} 
+                           min={1 as number} 
                            disabled={!selectedLoan} 
                            formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                           parser={(value) => Number(value?.replace(/,/g, '') || 0)}
+                           parser={(value) => (value ? value.replace(/,/g, '') : '') as any}
                        />
                    </Form.Item>
                   <Form.Item name="payment_method" label="Payment Source" initialValue="wallet">

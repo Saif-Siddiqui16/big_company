@@ -529,6 +529,48 @@ const CustomerManagementPage: React.FC = () => {
                 <Text type="secondary" className="text-xs uppercase font-semibold">Email</Text><br/>
                 <Text>{selectedCustomer.user?.email || 'N/A'}</Text>
               </Col>
+              <Col xs={24} sm={12}>
+                <Text type="secondary" className="text-xs uppercase font-semibold">Credit Limit</Text><br/>
+                <Space>
+                  <Text strong>{selectedCustomer.creditLimit?.toLocaleString() || '50,000'} RWF</Text>
+                  <Button 
+                    type="link" 
+                    size="small" 
+                    icon={<EditOutlined />}
+                    onClick={() => {
+                      let tempLimit = selectedCustomer.creditLimit || 50000;
+                      Modal.confirm({
+                        title: 'Update Customer Credit Limit',
+                        icon: <DollarOutlined style={{ color: '#26a69a' }} />,
+                        content: (
+                          <div style={{ marginTop: 12 }}>
+                            <Text>Enter new credit limit in RWF:</Text>
+                            <InputNumber 
+                              style={{ width: '100%', marginTop: 8 }}
+                              min={0}
+                              defaultValue={tempLimit}
+                              onChange={(val) => { tempLimit = val || 0; }}
+                            />
+                          </div>
+                        ),
+                        onOk: async () => {
+                          try {
+                            // @ts-ignore
+                            await adminApi.updateCustomerCreditLimit(selectedCustomer.id.toString(), tempLimit);
+                            message.success('Credit limit updated successfully!');
+                            setViewModalVisible(false);
+                            loadCustomers();
+                          } catch (err: any) {
+                            message.error(err.response?.data?.error || 'Failed to update credit limit');
+                          }
+                        }
+                      });
+                    }}
+                  >
+                    Modify
+                  </Button>
+                </Space>
+              </Col>
 
               {/* Wallet Info */}
               <Col span={24}>

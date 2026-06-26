@@ -11,6 +11,7 @@ import {
   Space,
   Badge,
   message,
+  InputNumber,
   Spin,
   Empty,
   Modal,
@@ -618,7 +619,18 @@ export const ShopPage = () => {
                             q > 0 ? (
                               <Space style={{ background: '#f0fdf4', borderRadius: 10, padding: 4 }}>
                                 <Button size="small" type="text" icon={<MinusOutlined />} onClick={() => updateQuantity(p.id, q - 1)} />
-                                <Text strong>{q}</Text>
+                                <InputNumber
+                                  size="small"
+                                  min={0.01}
+                                  max={stock}
+                                  step={0.25}
+                                  value={q}
+                                  onChange={(val) => {
+                                    if (val !== null) updateQuantity(p.id, val);
+                                  }}
+                                  style={{ width: 65 }}
+                                  precision={2}
+                                />
                                 <Button size="small" type="text" icon={<PlusOutlined />} onClick={() => {
                                   if (q >= stock) {
                                     message.warning(`Only ${stock} units available in stock.`);

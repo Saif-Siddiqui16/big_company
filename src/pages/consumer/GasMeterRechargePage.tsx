@@ -176,19 +176,21 @@ const GasMeterRechargePage: React.FC = () => {
 
     const handleSubmit = async (values: any) => {
         const amount = getEffectiveAmount();
-        const cost = calculateCost();
         const isPushToken = meterType === 'GPRS' && !!values.pipingToken;
+
+        const rawVolume = selectionMode === 'units' ? amount : amount / gasPriceRate;
+        const volume = isPushToken ? 0 : Math.floor(rawVolume * 10) / 10;
+        const cost = isPushToken ? 0 : volume * gasPriceRate;
 
         if (!isPushToken && amount <= 0) {
             message.error(`Please enter a valid ${selectionMode === 'units' ? 'quantity' : 'amount'}.`);
             return;
         }
 
-        // MIN VOLUME VALIDATION for Zamuka Meter
-        if (meterType === 'LORA_NB' && !isPushToken) {
-            const volume = selectionMode === 'units' ? amount : amount / gasPriceRate;
-            if (volume < minRechargeVolume) {
-                message.error(`Minimum recharge volume for Zamuka Gas Meter is ${minRechargeVolume} m³. Please increase your amount.`);
+        // MIN VOLUME VALIDATION
+        if (!isPushToken) {
+            if (volume < 0.1) {
+                message.error(`Minimum recharge volume is 0.1 m³. Please increase your amount.`);
                 return;
             }
         }
@@ -220,7 +222,7 @@ const GasMeterRechargePage: React.FC = () => {
             const response = await gasMeterRechargeApi.initiate({
                 meterNumber: values.meterNumber?.trim(),
                 meterType: 'TOKEN' as 'TOKEN' | 'PIPING',
-                amount: amount,
+                amount: selectionMode === 'units' ? volume : cost,
                 isVendByUnit: selectionMode === 'units',
                 paymentMethod,
                 phone: paymentMethod === 'mobile_money' ? values.phone : values.smsPhone,

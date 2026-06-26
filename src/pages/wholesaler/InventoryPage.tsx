@@ -126,7 +126,7 @@ export const InventoryPage = () => {
       const productsData = productsResponse.data;
       const productsList = (productsData.products || []).map((p: any) => ({
         ...p,
-        cost_price: p.costPrice || 0,
+        cost_price: p.supplierCost || p.costPrice || 0,
         wholesale_price: p.price || 0,
         low_stock_threshold: p.lowStockThreshold || 0,
         invoice_number: p.invoiceNumber || '',

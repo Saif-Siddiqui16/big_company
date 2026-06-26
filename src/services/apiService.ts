@@ -99,7 +99,7 @@ export const consumerApi = {
   // Wallet
   getWallet: () => api.get("/store/wallet/balance"), // Legacy route
   getWallets: () => api.get("/store/wallets"), // Get all wallets (dashboard + credit)
-  topupWallet: (data: { amount: number; payment_method: string }) =>
+  topupWallet: (data: { amount: number; payment_method: string; phone?: string }) =>
     api.post("/store/wallets/topup", data),
   requestRefund: (data: any) => api.post("/store/wallets/refund-request", data),
   getWalletTransactions: (params?: any) =>
@@ -697,6 +697,10 @@ export const adminApi = {
   updateEmailEvent: (id: number, data: any) => api.put(`/admin/email-events/${id}`, data),
   getSystemAlerts: () => api.get('/admin/alerts'),
   acknowledgeAlert: (id: string | number) => api.post(`/admin/alerts/${id}/acknowledge`),
+  updateCustomerCreditLimit: (id: string, creditLimit: number) =>
+    api.put(`/admin/customers/${id}/credit-limit`, { creditLimit }),
+  getCustomerCreditLimit: (id: string) =>
+    api.get(`/admin/customers/${id}/credit-limit`),
 };
 
 // General Auth APIs (Protected)

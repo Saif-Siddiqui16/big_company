@@ -371,7 +371,18 @@ const POSPage = () => {
         throw new Error(response.data?.error || 'Sale failed');
       }
     } catch (error: any) {
-      message.error(error.response?.data?.error || error.message || 'Sale failed');
+      const errorMsg = error.response?.data?.error || error.message || 'Sale failed';
+      
+      if (errorMsg.includes('Discount Blocked')) {
+        Modal.error({
+          title: 'Transaction Blocked (Security Guardrail)',
+          content: errorMsg,
+          okText: 'Understood',
+          okButtonProps: { danger: true }
+        });
+      } else {
+        message.error(errorMsg);
+      }
     } finally {
       setProcessing(false);
     }
@@ -725,7 +736,23 @@ const POSPage = () => {
                     type="primary"
                     size="large"
                     block
-                    onClick={() => setPaymentModal(true)}
+                    onClick={() => {
+                      if (discountAmount > 0 && subtotal > 0) {
+                        const requestedDiscountPct = (discountAmount / subtotal) * 100;
+                        const maxAllowedDiscount = 5; // We could fetch this from config, but 5% is the strict default safety floor
+
+                        if (requestedDiscountPct > maxAllowedDiscount) {
+                          Modal.error({
+                            title: 'Transaction Blocked (Security Guardrail)',
+                            content: `Transaction Blocked: The requested discount of ${requestedDiscountPct.toFixed(1)}% exceeds the Admin-approved maximum limit of 5%. Please lower the discount to proceed.`,
+                            okText: 'Understood',
+                            okButtonProps: { danger: true }
+                          });
+                          return; // Block checkout
+                        }
+                      }
+                      setPaymentModal(true);
+                    }}
                     disabled={cart.length === 0}
                   >
                     Checkout ({itemCount} items)
@@ -1029,15 +1056,14 @@ const POSPage = () => {
           <div className="modern-receipt-print" style={{ color: '#262626' }}>
             {/* Header / Branding */}
             <div style={{ textAlign: 'center', marginBottom: 16 }}>
-              <div style={{ position: 'relative', height: '85px', overflow: 'hidden', width: '260px', margin: '0 auto 4px' }}>
+              <div style={{ textAlign: 'center', marginBottom: 4 }}>
                 <img
                   src="/logo-big.png"
                   alt="BIG"
                   style={{
-                    position: 'absolute',
-                    top: '50%', left: '50%',
-                    transform: 'translate(-50%, -50%) scale(2.4)',
-                    width: '200px',
+                    height: '60px',
+                    display: 'block',
+                    margin: '0 auto',
                     objectFit: 'contain'
                   }}
                 />

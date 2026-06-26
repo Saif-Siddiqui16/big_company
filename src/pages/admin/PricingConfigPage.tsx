@@ -163,8 +163,8 @@ const PricingConfigPage: React.FC = () => {
   return (
     <div style={{ background: '#f5f7fa', minHeight: '100vh', padding: '24px' }}>
       {/* Orange Header Banner */}
-      <Card bordered={false} style={{ 
-        background: 'linear-gradient(90deg, #ff9800 0%, #f57c00 100%)', 
+      <Card bordered={false} style={{
+        background: 'linear-gradient(90deg, #ff9800 0%, #f57c00 100%)',
         borderRadius: '12px',
         marginBottom: '24px',
         boxShadow: '0 4px 12px rgba(245, 124, 0, 0.2)'
@@ -180,8 +180,8 @@ const PricingConfigPage: React.FC = () => {
             </Space>
           </Col>
           <Col>
-            <Button 
-              icon={<ReloadOutlined />} 
+            <Button
+              icon={<ReloadOutlined />}
               onClick={loadConfig}
               style={{ borderRadius: '8px', height: '40px' }}
             >
@@ -203,9 +203,9 @@ const PricingConfigPage: React.FC = () => {
               <PercentageOutlined style={{ marginRight: '8px', color: '#f57c00' }} />
               Profit Margin Settings
             </Title>
-            <Button 
-              type="link" 
-              icon={<EditOutlined />} 
+            <Button
+              type="link"
+              icon={<EditOutlined />}
               onClick={showEditModal}
               style={{ color: '#1890ff', fontWeight: 500 }}
             >
@@ -226,8 +226,8 @@ const PricingConfigPage: React.FC = () => {
             <Col span={8}>
               <Card variant="borderless" style={{ borderRadius: '12px', background: '#e1f5fe' }}>
                 <Form.Item name="retailerShare" label="Retailer Share (%)" style={{ margin: 0 }}>
-                  <InputNumber 
-                    style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '24px', fontWeight: 'bold' }} 
+                  <InputNumber
+                    style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '24px', fontWeight: 'bold' }}
                     formatter={value => `${value}%`}
                     parser={value => value!.replace('%', '')}
                   />
@@ -237,8 +237,8 @@ const PricingConfigPage: React.FC = () => {
             <Col span={8}>
               <Card variant="borderless" style={{ borderRadius: '12px', background: '#fff3e0' }}>
                 <Form.Item name="companyShare" label="Company Share (%)">
-                  <InputNumber 
-                    style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '24px', fontWeight: 'bold' }} 
+                  <InputNumber
+                    style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '24px', fontWeight: 'bold' }}
                     formatter={value => `${value}%`}
                     parser={value => value!.replace('%', '')}
                   />
@@ -248,13 +248,63 @@ const PricingConfigPage: React.FC = () => {
             <Col span={8}>
               <Card variant="borderless" style={{ borderRadius: '12px', background: '#f1f8e9' }}>
                 <Form.Item name="gasRewardShare" label="Gas Reward (%)">
-                  <InputNumber 
-                    style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '24px', fontWeight: 'bold' }} 
+                  <InputNumber
+                    style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '24px', fontWeight: 'bold' }}
                     formatter={value => `${value}% - M³`}
                     parser={value => value!.replace('% - M³', '')}
                     disabled
                   />
                 </Form.Item>
+              </Card>
+            </Col>
+          </Row>
+        </section>
+
+        {/* Module 1: Core Pricing Controls */}
+        <section style={{ marginBottom: '32px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <Title level={4} style={{ margin: 0, display: 'flex', alignItems: 'center' }}>
+              <SettingOutlined style={{ marginRight: '8px', color: '#1890ff' }} />
+              Core Pricing Controls
+            </Title>
+            <Button
+              type="link"
+              icon={<EditOutlined />}
+              onClick={showEditModal}
+              style={{ color: '#1890ff', fontWeight: 500 }}
+            >
+              Edit
+            </Button>
+          </div>
+
+          <Alert
+            title="Global Profit Margins & Guardrails"
+            description="These settings control the absolute markup and maximum allowed discount across the entire Wholesaler and Retailer supply chain."
+            type="info"
+            showIcon
+            icon={<InfoCircleOutlined />}
+            style={{ marginBottom: '16px', borderRadius: '8px', background: '#e6f7ff', border: '1px solid #91d5ff' }}
+          />
+
+          <Row gutter={[16, 16]}>
+            <Col span={6}>
+              <Card variant="borderless" style={{ borderRadius: '12px', background: '#fff', border: '1px solid #f0f0f0' }}>
+                <Statistic title="Wholesaler Markup" value={config?.wholesalerMarkup || 0} suffix="%" valueStyle={{ color: '#fa8c16' }} />
+              </Card>
+            </Col>
+            <Col span={6}>
+              <Card variant="borderless" style={{ borderRadius: '12px', background: '#fff', border: '1px solid #f0f0f0' }}>
+                <Statistic title="Retailer Markup" value={config?.retailerMarkup || 0} suffix="%" valueStyle={{ color: '#fa8c16' }} />
+              </Card>
+            </Col>
+            <Col span={6}>
+              <Card variant="borderless" style={{ borderRadius: '12px', background: '#fff', border: '1px solid #f0f0f0' }}>
+                <Statistic title="Max Allowed Discount" value={config?.maxDiscountPercentage || 0} suffix="%" valueStyle={{ color: '#cf1322' }} />
+              </Card>
+            </Col>
+            <Col span={6}>
+              <Card variant="borderless" style={{ borderRadius: '12px', background: '#fff', border: '1px solid #f0f0f0' }}>
+                <Statistic title="Type D Excise Duty" value={config?.exciseDutyRate || 0} suffix="%" valueStyle={{ color: '#52c41a' }} />
               </Card>
             </Col>
           </Row>
@@ -267,9 +317,9 @@ const PricingConfigPage: React.FC = () => {
               <BankOutlined style={{ marginRight: '8px', color: '#722ed1' }} />
               Loan Interest Rates Configuration
             </Title>
-            <Button 
-              type="link" 
-              icon={<EditOutlined />} 
+            <Button
+              type="link"
+              icon={<EditOutlined />}
               onClick={showEditModal}
               style={{ color: '#722ed1', fontWeight: 500 }}
             >
@@ -290,8 +340,8 @@ const PricingConfigPage: React.FC = () => {
             <Col span={8}>
               <Card variant="borderless" style={{ borderRadius: '12px', background: '#f9f0ff' }}>
                 <Form.Item name="customerLoanInterest" label="Customer Loan Interest (%)" style={{ margin: 0 }}>
-                  <InputNumber 
-                    style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '24px', fontWeight: 'bold', color: '#722ed1' }} 
+                  <InputNumber
+                    style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '24px', fontWeight: 'bold', color: '#722ed1' }}
                     formatter={value => `${value !== undefined ? value : 0}%`}
                     parser={value => value!.replace('%', '')}
                     readOnly
@@ -302,8 +352,8 @@ const PricingConfigPage: React.FC = () => {
             <Col span={8}>
               <Card variant="borderless" style={{ borderRadius: '12px', background: '#e6fffb' }}>
                 <Form.Item name="retailerLoanInterest" label="Retailer Loan Interest (%)" style={{ margin: 0 }}>
-                  <InputNumber 
-                    style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '24px', fontWeight: 'bold', color: '#13c2c2' }} 
+                  <InputNumber
+                    style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '24px', fontWeight: 'bold', color: '#13c2c2' }}
                     formatter={value => `${value !== undefined ? value : 0}%`}
                     parser={value => value!.replace('%', '')}
                     readOnly
@@ -314,8 +364,8 @@ const PricingConfigPage: React.FC = () => {
             <Col span={8}>
               <Card variant="borderless" style={{ borderRadius: '12px', background: '#fff0f6' }}>
                 <Form.Item name="wholesalerLoanInterest" label="Wholesaler Loan Interest (%)" style={{ margin: 0 }}>
-                  <InputNumber 
-                    style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '24px', fontWeight: 'bold', color: '#eb2f96' }} 
+                  <InputNumber
+                    style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '24px', fontWeight: 'bold', color: '#eb2f96' }}
                     formatter={value => `${value !== undefined ? value : 0}%`}
                     parser={value => value!.replace('%', '')}
                     readOnly
@@ -350,11 +400,11 @@ const PricingConfigPage: React.FC = () => {
                   <Col><Text type="secondary">Price per M³</Text></Col>
                   <Col>
                     <Form.Item name="gasPricePerM3" style={{ margin: 0 }}>
-                      <InputNumber 
-                        style={{ border: 'none', textAlign: 'right', fontWeight: 'bold' }} 
+                      <InputNumber
+                        style={{ border: 'none', textAlign: 'right', fontWeight: 'bold' }}
                         formatter={value => `${value} RWF`}
                         parser={value => value!.replace(/\s?RWF/g, '')}
-                        disabled={!isEditing} 
+                        disabled={!isEditing}
                       />
                     </Form.Item>
                   </Col>
@@ -363,11 +413,11 @@ const PricingConfigPage: React.FC = () => {
                   <Col><Text type="secondary">Min Top-up</Text></Col>
                   <Col>
                     <Form.Item name="minGasTopup" style={{ margin: 0 }}>
-                      <InputNumber 
-                        style={{ border: 'none', textAlign: 'right', fontWeight: 'bold' }} 
+                      <InputNumber
+                        style={{ border: 'none', textAlign: 'right', fontWeight: 'bold' }}
                         formatter={value => `${value} RWF`}
                         parser={value => value!.replace(/\s?RWF/g, '')}
-                        disabled={!isEditing} 
+                        disabled={!isEditing}
                       />
                     </Form.Item>
                   </Col>
@@ -376,11 +426,11 @@ const PricingConfigPage: React.FC = () => {
                   <Col><Text type="secondary">Max Top-up</Text></Col>
                   <Col>
                     <Form.Item name="maxGasTopup" style={{ margin: 0 }}>
-                      <InputNumber 
-                        style={{ border: 'none', textAlign: 'right', fontWeight: 'bold' }} 
+                      <InputNumber
+                        style={{ border: 'none', textAlign: 'right', fontWeight: 'bold' }}
                         formatter={value => `${value} RWF`}
                         parser={value => value!.replace(/\s?RWF/g, '')}
-                        disabled={!isEditing} 
+                        disabled={!isEditing}
                       />
                     </Form.Item>
                   </Col>
@@ -412,11 +462,11 @@ const PricingConfigPage: React.FC = () => {
                   <Col><Text type="secondary">Min Wallet Top-up</Text></Col>
                   <Col>
                     <Form.Item name="minWalletTopup" style={{ margin: 0 }}>
-                      <InputNumber 
-                        style={{ border: 'none', textAlign: 'right', fontWeight: 'bold' }} 
+                      <InputNumber
+                        style={{ border: 'none', textAlign: 'right', fontWeight: 'bold' }}
                         formatter={value => `${value} RWF`}
                         parser={value => value!.replace(/\s?RWF/g, '')}
-                        disabled={!isEditing} 
+                        disabled={!isEditing}
                       />
                     </Form.Item>
                   </Col>
@@ -425,11 +475,11 @@ const PricingConfigPage: React.FC = () => {
                   <Col><Text type="secondary">Max Wallet Top-up</Text></Col>
                   <Col>
                     <Form.Item name="maxWalletTopup" style={{ margin: 0 }}>
-                      <InputNumber 
-                        style={{ border: 'none', textAlign: 'right', fontWeight: 'bold' }} 
+                      <InputNumber
+                        style={{ border: 'none', textAlign: 'right', fontWeight: 'bold' }}
                         formatter={value => `${value} RWF`}
                         parser={value => value!.replace(/\s?RWF/g, '')}
-                        disabled={!isEditing} 
+                        disabled={!isEditing}
                       />
                     </Form.Item>
                   </Col>
@@ -438,11 +488,11 @@ const PricingConfigPage: React.FC = () => {
                   <Col><Text type="secondary">Max Daily Transaction</Text></Col>
                   <Col>
                     <Form.Item name="maxDailyTransaction" style={{ margin: 0 }}>
-                      <InputNumber 
-                        style={{ border: 'none', textAlign: 'right', fontWeight: 'bold' }} 
+                      <InputNumber
+                        style={{ border: 'none', textAlign: 'right', fontWeight: 'bold' }}
                         formatter={value => `${value} RWF`}
                         parser={value => value!.replace(/\s?RWF/g, '')}
-                        disabled={!isEditing} 
+                        disabled={!isEditing}
                       />
                     </Form.Item>
                   </Col>
@@ -451,11 +501,11 @@ const PricingConfigPage: React.FC = () => {
                   <Col><Text type="secondary">Max Credit Limit</Text></Col>
                   <Col>
                     <Form.Item name="maxCreditLimit" style={{ margin: 0 }}>
-                      <InputNumber 
-                        style={{ border: 'none', textAlign: 'right', fontWeight: 'bold' }} 
+                      <InputNumber
+                        style={{ border: 'none', textAlign: 'right', fontWeight: 'bold' }}
                         formatter={value => `${value} RWF`}
                         parser={value => value!.replace(/\s?RWF/g, '')}
-                        disabled={!isEditing} 
+                        disabled={!isEditing}
                       />
                     </Form.Item>
                   </Col>
@@ -482,38 +532,38 @@ const PricingConfigPage: React.FC = () => {
             style={{ marginBottom: '16px', borderRadius: '8px', background: '#fffde7', border: '1px solid #fff59d' }}
           />
           <Card variant="borderless" style={{ borderRadius: '12px' }}>
-             <Row gutter={48}>
-                <Col span={12}>
-                    <div style={{ marginBottom: '12px' }}><Text strong style={{ color: '#52c41a' }}>WITH Meter ID (Gas Reward Eligible)</Text></div>
-                    <Row justify="space-between" style={{ padding: '8px 0' }}>
-                        <Col><Text type="secondary">Retailer Share</Text></Col>
-                        <Col><Tag color="blue">60%</Tag></Col>
-                    </Row>
-                    <Row justify="space-between" style={{ padding: '8px 0' }}>
-                        <Col><Text type="secondary">Company Share</Text></Col>
-                        <Col><Tag color="orange">28%</Tag></Col>
-                    </Row>
-                    <Row justify="space-between" style={{ padding: '8px 0' }}>
-                        <Col><Text type="secondary">Gas Reward (M³)</Text></Col>
-                        <Col><Tag color="green">12%</Tag></Col>
-                    </Row>
-                </Col>
-                <Col span={12} style={{ borderLeft: '1px solid #f0f0f0' }}>
-                    <div style={{ marginBottom: '12px' }}><Text strong style={{ color: '#ff4d4f' }}>WITHOUT Meter ID (No Gas Reward)</Text></div>
-                    <Row justify="space-between" style={{ padding: '8px 0' }}>
-                        <Col><Text type="secondary">Retailer Share</Text></Col>
-                        <Col><Tag color="blue">60%</Tag></Col>
-                    </Row>
-                    <Row justify="space-between" style={{ padding: '8px 0' }}>
-                        <Col><Text type="secondary">Company Share</Text></Col>
-                        <Col><Tag color="red">40%</Tag></Col>
-                    </Row>
-                    <Row justify="space-between" style={{ padding: '8px 0' }}>
-                        <Col><Text type="secondary">Gas Reward</Text></Col>
-                        <Col><Text type="danger" style={{ fontSize: '12px' }}>0% (User not eligible)</Text></Col>
-                    </Row>
-                </Col>
-             </Row>
+            <Row gutter={48}>
+              <Col span={12}>
+                <div style={{ marginBottom: '12px' }}><Text strong style={{ color: '#52c41a' }}>WITH Meter ID (Gas Reward Eligible)</Text></div>
+                <Row justify="space-between" style={{ padding: '8px 0' }}>
+                  <Col><Text type="secondary">Retailer Share</Text></Col>
+                  <Col><Tag color="blue">60%</Tag></Col>
+                </Row>
+                <Row justify="space-between" style={{ padding: '8px 0' }}>
+                  <Col><Text type="secondary">Company Share</Text></Col>
+                  <Col><Tag color="orange">28%</Tag></Col>
+                </Row>
+                <Row justify="space-between" style={{ padding: '8px 0' }}>
+                  <Col><Text type="secondary">Gas Reward (M³)</Text></Col>
+                  <Col><Tag color="green">12%</Tag></Col>
+                </Row>
+              </Col>
+              <Col span={12} style={{ borderLeft: '1px solid #f0f0f0' }}>
+                <div style={{ marginBottom: '12px' }}><Text strong style={{ color: '#ff4d4f' }}>WITHOUT Meter ID (No Gas Reward)</Text></div>
+                <Row justify="space-between" style={{ padding: '8px 0' }}>
+                  <Col><Text type="secondary">Retailer Share</Text></Col>
+                  <Col><Tag color="blue">60%</Tag></Col>
+                </Row>
+                <Row justify="space-between" style={{ padding: '8px 0' }}>
+                  <Col><Text type="secondary">Company Share</Text></Col>
+                  <Col><Tag color="red">40%</Tag></Col>
+                </Row>
+                <Row justify="space-between" style={{ padding: '8px 0' }}>
+                  <Col><Text type="secondary">Gas Reward</Text></Col>
+                  <Col><Text type="danger" style={{ fontSize: '12px' }}>0% (User not eligible)</Text></Col>
+                </Row>
+              </Col>
+            </Row>
           </Card>
         </section>
 
@@ -524,9 +574,9 @@ const PricingConfigPage: React.FC = () => {
               <ThunderboltOutlined style={{ marginRight: '8px', color: '#ff6b35' }} />
               Gas Purchase Pricing Plans
             </Title>
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
               onClick={() => showPlanModal()}
               style={{ background: '#ff6b35', borderColor: '#ff6b35', borderRadius: '8px' }}
             >
@@ -566,10 +616,10 @@ const PricingConfigPage: React.FC = () => {
                   dataIndex: 'isActive',
                   key: 'isActive',
                   render: (active: boolean, record: any) => (
-                    <Switch 
-                      checked={active} 
-                      onChange={() => togglePlanStatus(record)} 
-                      size="small" 
+                    <Switch
+                      checked={active}
+                      onChange={() => togglePlanStatus(record)}
+                      size="small"
                     />
                   )
                 },
@@ -578,9 +628,9 @@ const PricingConfigPage: React.FC = () => {
                   key: 'actions',
                   render: (_, record: any) => (
                     <Space>
-                      <Button 
-                        size="small" 
-                        icon={<EditOutlined />} 
+                      <Button
+                        size="small"
+                        icon={<EditOutlined />}
                         onClick={() => showPlanModal(record)}
                       />
                       <Popconfirm
@@ -589,10 +639,10 @@ const PricingConfigPage: React.FC = () => {
                         okText="Yes"
                         cancelText="No"
                       >
-                        <Button 
-                          size="small" 
-                          danger 
-                          icon={<DeleteOutlined />} 
+                        <Button
+                          size="small"
+                          danger
+                          icon={<DeleteOutlined />}
                         />
                       </Popconfirm>
                     </Space>
@@ -660,6 +710,52 @@ const PricingConfigPage: React.FC = () => {
 
           <div style={{ marginTop: '24px', marginBottom: '16px' }}>
             <Text type="secondary" strong style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Module 1: Core Pricing Controls
+            </Text>
+            <Divider style={{ margin: '8px 0 0 0' }} />
+          </div>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="wholesalerMarkup"
+                label={<Text strong style={{ fontSize: '12px' }}>Wholesaler Markup (%)</Text>}
+                rules={[{ required: true, message: 'Input markup' }]}
+              >
+                <InputNumber style={{ width: '100%', borderRadius: '8px' }} suffix="%" placeholder="20" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="retailerMarkup"
+                label={<Text strong style={{ fontSize: '12px' }}>Retailer Markup (%)</Text>}
+                rules={[{ required: true, message: 'Input markup' }]}
+              >
+                <InputNumber style={{ width: '100%', borderRadius: '8px' }} suffix="%" placeholder="20" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="maxDiscountPercentage"
+                label={<Text strong style={{ fontSize: '12px' }}>Max Allowed Discount (%)</Text>}
+                rules={[{ required: true, message: 'Input max discount' }]}
+              >
+                <InputNumber style={{ width: '100%', borderRadius: '8px' }} suffix="%" placeholder="5" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="exciseDutyRate"
+                label={<Text strong style={{ fontSize: '12px' }}>Type D Excise Duty (%)</Text>}
+                rules={[{ required: true, message: 'Input excise duty' }]}
+              >
+                <InputNumber style={{ width: '100%', borderRadius: '8px' }} suffix="%" placeholder="10" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <div style={{ marginTop: '24px', marginBottom: '16px' }}>
+            <Text type="secondary" strong style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               Loan Interest Rates (%)
             </Text>
             <Divider style={{ margin: '8px 0 0 0' }} />
@@ -696,20 +792,20 @@ const PricingConfigPage: React.FC = () => {
           </Row>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-            <Button 
+            <Button
               onClick={() => setIsModalVisible(false)}
               style={{ borderRadius: '8px', height: '40px', padding: '0 24px' }}
             >
               Cancel
             </Button>
-            <Button 
-              type="primary" 
-              htmlType="submit" 
+            <Button
+              type="primary"
+              htmlType="submit"
               loading={loading}
               icon={<SaveOutlined />}
-              style={{ 
-                borderRadius: '8px', 
-                height: '40px', 
+              style={{
+                borderRadius: '8px',
+                height: '40px',
                 padding: '0 24px',
                 background: '#1890ff',
                 borderColor: '#1890ff'
@@ -740,9 +836,9 @@ const PricingConfigPage: React.FC = () => {
             label="Plan Amount (RWF)"
             rules={[{ required: true, message: 'Please input the amount' }]}
           >
-            <InputNumber 
-              style={{ width: '100%' }} 
-              placeholder="e.g. 500" 
+            <InputNumber
+              style={{ width: '100%' }}
+              placeholder="e.g. 500"
               formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
               parser={value => value!.replace(/\$\s?|(,*)/g, '')}
             />
@@ -758,9 +854,9 @@ const PricingConfigPage: React.FC = () => {
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
             <Button onClick={() => setIsPlanModalVisible(false)}>Cancel</Button>
-            <Button 
-              type="primary" 
-              htmlType="submit" 
+            <Button
+              type="primary"
+              htmlType="submit"
               loading={loading}
               style={{ background: '#ff6b35', borderColor: '#ff6b35' }}
             >

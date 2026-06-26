@@ -58,6 +58,10 @@ interface Product {
   barcode?: string;
   image?: string;
   status: 'active' | 'inactive';
+  unit?: string;
+  baseUnit?: string;
+  purchaseUnit?: string;
+  conversionFactor?: number;
   created_at: string;
   updated_at: string;
 }
@@ -258,7 +262,11 @@ export const InventoryPage = () => {
             price: values.selling_price, // Backend expects 'price' as selling price
             costPrice: values.cost_price,
             stock: values.stock,
-            sku: values.sku
+            sku: values.sku,
+            baseUnit: values.baseUnit,
+            purchaseUnit: values.purchaseUnit,
+            conversionFactor: values.conversionFactor,
+            taxType: values.taxType
           }
         : {
             invoice_number: values.invoice_number
@@ -454,13 +462,24 @@ export const InventoryPage = () => {
       render: (_: any, record: Product) => {
         const status = getStockStatus(record.stock, record.low_stock_threshold);
         const percentage = Math.min((record.stock / (record.low_stock_threshold * 2)) * 100, 100);
+        
+        const conversionFactor = (record as any).conversionFactor;
+        const purchaseUnit = (record as any).purchaseUnit;
+        const baseUnit = (record as any).baseUnit;
+        
+        let stockLabel = `${record.stock} ${record.unit || 'units'}`;
+        if (conversionFactor && conversionFactor > 0) {
+          const purchaseQty = record.stock / conversionFactor;
+          stockLabel = `${record.stock} ${baseUnit || 'units'} (${purchaseQty} ${purchaseUnit || 'sacks'})`;
+        }
+
         return (
-          <div style={{ width: 150 }}>
+          <div style={{ width: 220 }}>
             <Progress
               percent={percentage}
               size="small"
               status={status.status}
-              format={() => `${record.stock} units`}
+              format={() => stockLabel}
             />
           </div>
         );
@@ -952,6 +971,33 @@ export const InventoryPage = () => {
 
                     <Form.Item name="sku" label="SKU / Barcode (Optional)">
                       <Input placeholder="Scan or type code" prefix={<BarcodeOutlined />} />
+                    </Form.Item>
+
+                    <Row gutter={16}>
+                      <Col span={8}>
+                         <Form.Item name="purchaseUnit" label="Purchase Unit">
+                           <Input placeholder="e.g. Sack, Carton" />
+                         </Form.Item>
+                      </Col>
+                      <Col span={8}>
+                         <Form.Item name="baseUnit" label="Base Unit">
+                           <Input placeholder="e.g. kg, piece" />
+                         </Form.Item>
+                      </Col>
+                      <Col span={8}>
+                         <Form.Item name="conversionFactor" label="Conversion Factor">
+                           <InputNumber style={{ width: '100%' }} min={1} placeholder="e.g. 25" />
+                         </Form.Item>
+                      </Col>
+                    </Row>
+
+                    <Form.Item name="taxType" label="Tax Category" initialValue="B">
+                      <Select>
+                        <Select.Option value="A">Type A (Exempted)</Select.Option>
+                        <Select.Option value="B">Type B (Standard 18% VAT)</Select.Option>
+                        <Select.Option value="C">Type C (Zero-Rated)</Select.Option>
+                        <Select.Option value="D">Type D (Luxury / Compounded)</Select.Option>
+                      </Select>
                     </Form.Item>
 
                     <Form.Item label="Product Image">
