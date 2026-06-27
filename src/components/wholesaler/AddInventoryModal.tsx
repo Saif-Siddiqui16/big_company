@@ -55,6 +55,9 @@ export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
     useEffect(() => {
         if (open) {
             fetchCategories();
+            // Automatically generate and display a clean, short SKU
+            const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+            form.setFieldsValue({ sku: `SKU-${randomSuffix}` });
         }
     }, [open]);
 

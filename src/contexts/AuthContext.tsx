@@ -74,6 +74,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       user.role = role;
 
       if (response.require_password_reset) {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+        
         localStorage.setItem('temp_token', response.access_token);
         localStorage.setItem('temp_role', role);
         localStorage.setItem('temp_user', JSON.stringify(user));

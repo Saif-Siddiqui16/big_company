@@ -193,6 +193,13 @@ const GasMeterRechargePage: React.FC = () => {
                 message.error(`Minimum recharge volume is 0.1 m³. Please increase your amount.`);
                 return;
             }
+
+            // Decimal precision validation
+            const decimals = volume.toString().split('.')[1];
+            if (decimals && decimals.length > 1) {
+                message.error(`Only one decimal precision allowed. Value ${volume} is invalid (e.g. 0.1, 0.4 are valid).`);
+                return;
+            }
         }
 
         if (!isPushToken && paymentMethod === 'wallet' && walletBalance < cost) {
@@ -613,15 +620,15 @@ const GasMeterRechargePage: React.FC = () => {
                                         label={<Text strong>Recharge Amount (RWF)</Text>}
                                         help={selectedAmount ? (
                                             <Text type="success" style={{ fontSize: 13, fontWeight: 600 }}>
-                                                ≈ {(selectedAmount / gasPriceRate).toFixed(4)} m³ of Gas
+                                                ≈ {Math.floor((selectedAmount / gasPriceRate) * 10) / 10} m³ of Gas
                                             </Text>
                                         ) : <Text type="secondary" style={{ fontSize: 11 }}>Please select one of the allowed amounts</Text>}
                                     >
                                         <Row gutter={[8, 8]}>
                                             {predefinedPlans.map((plan) => {
                                                 const amt = plan.amount;
-                                                const volume = amt / gasPriceRate;
-                                                const isTooSmall = meterType === 'LORA_NB' && volume < minRechargeVolume;
+                                                const volume = Math.floor((amt / gasPriceRate) * 10) / 10;
+                                                const isTooSmall = volume < minRechargeVolume;
                                                 
                                                 return (
                                                     <Col span={8} key={plan.id}>
@@ -680,8 +687,8 @@ const GasMeterRechargePage: React.FC = () => {
                                             style={{ borderRadius: 8 }}
                                             onChange={(e) => setUnitAmount(e.target.value)}
                                             type="number"
-                                            step="0.01"
-                                            min={0.01}
+                                            step="0.1"
+                                            min={0.1}
                                         />
                                     </Form.Item>
                                 )}

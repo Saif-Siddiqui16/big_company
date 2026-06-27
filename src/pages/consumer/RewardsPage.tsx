@@ -720,15 +720,15 @@ export const RewardsPage: React.FC = () => {
               { required: true, message: 'Please enter amount' },
               ({ getFieldValue }) => ({
                 validator(_, value) {
-                  const meterType = getFieldValue('meterType') || 'LORA_NB';
-                  const isZamuka = meterType === 'LORA_NB';
-                  const adminMinRwf = gasConfig?.min_topup || 500;
-                  const gasPrice = gasConfig?.price_per_m3 || 1500;
-                  const minVolumeForRwf = adminMinRwf / gasPrice;
-
-                  if (isZamuka && value < 0.1) {
-                    return Promise.reject(new Error('Minimum volume for Zamuka meter is 0.1 M³'));
+                  if (value < 0.1) {
+                    return Promise.reject(new Error('Minimum transfer amount is 0.1 M³'));
                   }
+                  
+                  const decimals = value.toString().split('.')[1];
+                  if (decimals && decimals.length > 1) {
+                    return Promise.reject(new Error('Only one decimal precision allowed (e.g. 0.1, 0.4)'));
+                  }
+
                   if (value <= 0) {
                     return Promise.reject(new Error('Amount must be greater than 0'));
                   }

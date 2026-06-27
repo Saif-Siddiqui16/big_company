@@ -47,6 +47,7 @@ interface LoanDetails {
   disbursed_date: string;
   repayment_frequency: 'daily' | 'weekly';
   interest_rate: number;
+  interest_amount?: number;
   total_amount: number;
   outstanding_balance: number;
   paid_amount: number;
@@ -261,7 +262,7 @@ const CreditLedgerPage: React.FC = () => {
           </Col>
           <Col xs={24} md={12}>
             <Space direction="vertical" size={2} style={{ width: '100%', textAlign: 'right' }}>
-              <Text style={{ color: 'rgba(255,255,255,0.85)' }}>Original Amount</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.85)' }}>Principal</Text>
               <Title level={3} style={{ color: 'white', margin: 0 }}>
                 {loan.amount.toLocaleString()} RWF
               </Title>
@@ -334,13 +335,13 @@ const CreditLedgerPage: React.FC = () => {
           </Col>
           <Col xs={12} sm={6}>
             <Space direction="vertical" size={0}>
-              <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12 }}>Interest Rate</Text>
-              <Text style={{ color: 'white', fontWeight: 500 }}>{loan.interest_rate}%</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12 }}>Interest Amount</Text>
+              <Text style={{ color: 'white', fontWeight: 500 }}>{loan.interest_amount?.toLocaleString() || 0} RWF ({loan.interest_rate}%)</Text>
             </Space>
           </Col>
           <Col xs={12} sm={6}>
             <Space direction="vertical" size={0}>
-              <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12 }}>Total Amount</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12 }}>Total Due</Text>
               <Text style={{ color: 'white', fontWeight: 500 }}>{loan.total_amount.toLocaleString()} RWF</Text>
             </Space>
           </Col>
@@ -393,7 +394,7 @@ const CreditLedgerPage: React.FC = () => {
             <Row gutter={[16, 16]}>
               <Col span={12}>
                 <Statistic
-                  title="Outstanding Balance"
+                  title="Remaining Balance"
                   value={loan.outstanding_balance.toLocaleString()}
                   suffix="RWF"
                   valueStyle={{ color: '#722ed1', fontSize: 24 }}

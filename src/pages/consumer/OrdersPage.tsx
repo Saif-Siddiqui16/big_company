@@ -260,7 +260,6 @@ export const OrdersPage: React.FC = () => {
     });
 
     const img = new Image();
-    img.src = '/logo-big.png';
 
     const generate = (imgData?: string, imgWidth?: number, imgHeight?: number) => {
       try {
@@ -271,7 +270,8 @@ export const OrdersPage: React.FC = () => {
         if (imgData && imgWidth && imgHeight) {
           const targetWidth = 45;
           const targetHeight = targetWidth * (imgHeight / imgWidth);
-          doc.addImage(imgData, 'PNG', 20, y, targetWidth, targetHeight);
+          // Changed to JPEG to match dataURL format, avoids black background
+          doc.addImage(imgData, 'JPEG', 20, y, targetWidth, targetHeight);
           y += targetHeight + 6;
         } else {
           doc.setFont('helvetica', 'bold');
@@ -398,9 +398,12 @@ export const OrdersPage: React.FC = () => {
       canvas.height = img.naturalHeight;
       const ctx = canvas.getContext('2d');
       if (ctx) {
+        // Fill white background to prevent transparent PNGs from rendering as black in PDF
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0);
         try {
-          const dataURL = canvas.toDataURL('image/png');
+          const dataURL = canvas.toDataURL('image/jpeg', 1.0); // Use JPEG to avoid PNG transparency issues
           generate(dataURL, img.naturalWidth, img.naturalHeight);
         } catch (e) {
           generate();
@@ -413,6 +416,9 @@ export const OrdersPage: React.FC = () => {
     img.onerror = () => {
       generate();
     };
+
+    // Set src AFTER attaching onload/onerror handlers to prevent cache race conditions
+    img.src = '/logo-big.png';
   };
 
   const getPaymentMethodBadge = (paymentMethod: string | undefined) => {
@@ -1069,12 +1075,12 @@ export const OrdersPage: React.FC = () => {
           <div style={{ padding: '20px', background: 'white' }}>
             {/* Receipt Header */}
             <div style={{ textAlign: 'center', marginBottom: 12, borderBottom: '2px solid #1890ff', paddingBottom: 10 }}>
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '70px', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80px', width: '100%', marginBottom: '12px' }}>
                 <img
                   src="/logo-big.png"
                   alt="BIG"
                   style={{
-                    height: '100%',
+                    maxHeight: '100%',
                     maxWidth: '100%',
                     objectFit: 'contain'
                   }}

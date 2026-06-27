@@ -307,14 +307,16 @@ export const LoginPage: React.FC = () => {
       const token = localStorage.getItem('temp_token') || localStorage.getItem('bigcompany_token');
       const rolePrefix = activeRole === 'consumer' ? 'store' : activeRole;
       const endpoint = `${API_URL}/${rolePrefix}/auth/update-password`;
-      await axios.put(
+      const res = await axios.put(
         endpoint,
         { old_password: tempPasswordUsed, new_password: newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
-      if (token) {
-        setUserFromToken(token, activeRole);
+      const newToken = res.data.access_token || token;
+      
+      if (newToken) {
+        setUserFromToken(newToken, activeRole);
         localStorage.removeItem('temp_token');
         localStorage.removeItem('temp_role');
       }
