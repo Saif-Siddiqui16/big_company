@@ -187,9 +187,9 @@ export const PurchaseOrdersPage = () => {
         <style>
           body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 40px; color: #1f2937; line-height: 1.5; }
           .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #f3f4f6; padding-bottom: 20px; }
-          .logo-wrapper { position: relative; height: 120px; overflow: hidden; width: 300px; margin: 0 auto 5px; }
-          .logo { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(2.0); width: 100%; object-fit: contain; }
-          .company-name { font-size: 26px; font-weight: 800; margin: 0; color: #111827; letter-spacing: -0.025em; position: relative; z-index: 10; }
+          .logo-wrapper { display: flex; justify-content: center; align-items: center; height: 100px; width: 300px; margin: 0 auto 10px; }
+          .logo { max-height: 100px; max-width: 280px; object-fit: contain; display: block; }
+          .company-name { font-size: 26px; font-weight: 800; margin: 0; color: #111827; letter-spacing: -0.025em; }
           .receipt-title { font-size: 14px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; }
           
           .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; }
@@ -278,6 +278,10 @@ export const PurchaseOrdersPage = () => {
           <div class="total-row">
             <span>Subtotal</span>
             <span>${order.total_amount.toLocaleString()} RWF</span>
+          </div>
+          <div class="total-row">
+            <span>Tax (18% VAT included)</span>
+            <span>${Math.round(order.total_amount - order.total_amount / 1.18).toLocaleString()} RWF</span>
           </div>
           <div class="total-row grand-total">
             <span>Amount Paid</span>

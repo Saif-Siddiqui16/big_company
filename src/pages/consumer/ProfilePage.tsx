@@ -15,6 +15,7 @@ import {
   List,
   Switch,
   Spin,
+  Modal,
 } from 'antd';
 import {
   UserOutlined,
@@ -30,18 +31,22 @@ import {
   ShopOutlined,
   LinkOutlined,
   CalendarOutlined,
+  MobileOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_URL } from '../../config';
+import { authApi } from '../../services/apiService';
 
 const { Title, Text } = Typography;
 
 export const ProfilePage: React.FC = () => {
-  const { user, token } = useAuth();
+  const { user, token, logout } = useAuth();
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [form] = Form.useForm();
+  const [pinForm] = Form.useForm();
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
 
   // State for API data
   const [profileData, setProfileData] = useState<any>(null);
@@ -83,14 +88,16 @@ export const ProfilePage: React.FC = () => {
 
       if (profileJson.success) {
         setProfileData(profileJson.data);
-        // Update form with fetched data
-        form.setFieldsValue({
-          name: profileJson.data.full_name || user?.name,
-          phone: profileJson.data.phone || user?.phone,
-          email: profileJson.data.email || user?.email,
-          address: profileJson.data.address || '',
-          landmark: profileJson.data.landmark || '',
-        });
+        // Update form with fetched data after render
+        setTimeout(() => {
+          form.setFieldsValue({
+            name: profileJson.data.full_name || user?.name,
+            phone: profileJson.data.phone || user?.phone,
+            email: profileJson.data.email || user?.email,
+            address: profileJson.data.address || '',
+            landmark: profileJson.data.landmark || '',
+          });
+        }, 0);
       }
 
       if (statsJson.success) {
@@ -144,6 +151,23 @@ export const ProfilePage: React.FC = () => {
     } catch (error) {
       console.error('Error updating profile:', error);
       message.error('Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdatePin = async (values: any) => {
+    setLoading(true);
+    try {
+      await authApi.updatePin({
+        old_pin: values.old_pin,
+        new_pin: values.new_pin,
+      });
+      message.success('PIN updated successfully');
+      setIsPinModalOpen(false);
+      pinForm.resetFields();
+    } catch (error: any) {
+      message.error(error.response?.data?.error || 'Failed to update PIN');
     } finally {
       setLoading(false);
     }
@@ -399,13 +423,25 @@ export const ProfilePage: React.FC = () => {
           {/* Security */}
           <Card title={<><LockOutlined /> Security</>} style={{ marginTop: 24 }}>
             <Space direction="vertical" style={{ width: '100%' }}>
-              <Button block icon={<LockOutlined />}>
+              <Button
+                block
+                icon={<LockOutlined />}
+                onClick={() => {
+                  setIsPinModalOpen(true);
+                }}
+              >
                 Change PIN
               </Button>
-              <Button block icon={<CreditCardOutlined />}>
+              <Button
+                block
+                icon={<CreditCardOutlined />}
+                onClick={() => {
+                  window.location.href = '/consumer/wallet';
+                }}
+              >
                 Manage Payment Methods
               </Button>
-              <Button block type="text" danger>
+              <Button block type="text" danger onClick={logout}>
                 Logout from All Devices
               </Button>
             </Space>
@@ -506,6 +542,59 @@ export const ProfilePage: React.FC = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* PIN Change Modal */}
+      <Modal
+        title="Change PIN"
+        open={isPinModalOpen}
+        onCancel={() => setIsPinModalOpen(false)}
+        footer={null}
+        destroyOnClose
+      >
+        <Form form={pinForm} layout="vertical" onFinish={handleUpdatePin}>
+          <Form.Item
+            name="old_pin"
+            label="Current PIN"
+            rules={[{ required: true, message: 'Please enter current PIN' }]}
+          >
+            <Input.Password prefix={<MobileOutlined />} maxLength={4} />
+          </Form.Item>
+          <Form.Item
+            name="new_pin"
+            label="New PIN"
+            rules={[
+              { required: true, message: 'Please enter new PIN' },
+              { len: 4, message: 'PIN must be exactly 4 digits' },
+              { pattern: /^\d+$/, message: 'PIN must contain only numbers' }
+            ]}
+          >
+            <Input.Password prefix={<MobileOutlined />} maxLength={4} />
+          </Form.Item>
+          <Form.Item
+            name="confirm_pin"
+            label="Confirm New PIN"
+            dependencies={['new_pin']}
+            rules={[
+              { required: true, message: 'Please confirm new PIN' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('new_pin') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('PINs do not match'));
+                },
+              }),
+            ]}
+          >
+            <Input.Password prefix={<MobileOutlined />} maxLength={4} />
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" loading={loading} block>
+              Update PIN
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

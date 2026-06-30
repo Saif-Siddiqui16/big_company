@@ -12,8 +12,8 @@ const api = axios.create({
 // Add auth token to all requests
 api.interceptors.request.use((config) => {
   const token =
-    localStorage.getItem("bigcompany_token") ||
-    localStorage.getItem("admin_token");
+    sessionStorage.getItem("bigcompany_token") ||
+    sessionStorage.getItem("admin_token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -26,9 +26,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("bigcompany_token");
-      localStorage.removeItem("admin_token");
-      localStorage.removeItem("bigcompany_user");
+      sessionStorage.removeItem("bigcompany_token");
+      sessionStorage.removeItem("admin_token");
+      sessionStorage.removeItem("bigcompany_user");
       window.location.href = "/login";
     }
     return Promise.reject(error);
@@ -705,19 +705,20 @@ export const adminApi = {
 
 // General Auth APIs (Protected)
 // These use role-based endpoints: /wholesaler/auth, /retailer/auth, etc.
-const getUserRole = () => {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  return user.role || "wholesaler"; // Default to wholesaler
+const getUserRolePrefix = () => {
+  const user = JSON.parse(sessionStorage.getItem("bigcompany_user") || "{}");
+  const role = user.role || "wholesaler";
+  return role === "consumer" ? "store" : role;
 };
 
 export const authApi = {
   updatePassword: (data: any) => {
-    const role = getUserRole();
-    return api.put(`/${role}/auth/update-password`, data);
+    const prefix = getUserRolePrefix();
+    return api.put(`/${prefix}/auth/update-password`, data);
   },
   updatePin: (data: any) => {
-    const role = getUserRole();
-    return api.put(`/${role}/auth/update-pin`, data);
+    const prefix = getUserRolePrefix();
+    return api.put(`/${prefix}/auth/update-pin`, data);
   },
 };
 

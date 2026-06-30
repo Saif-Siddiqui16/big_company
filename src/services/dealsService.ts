@@ -3,8 +3,8 @@ import axios from "axios";
 import { API_URL } from "../config";
 
 const getAuthHeader = () => {
-  const token = localStorage.getItem("bigcompany_token");
-  const adminToken = localStorage.getItem("admin_token");
+  const token = sessionStorage.getItem("bigcompany_token") || localStorage.getItem("bigcompany_token");
+  const adminToken = sessionStorage.getItem("admin_token") || localStorage.getItem("admin_token");
   return {
     headers: {
       Authorization: `Bearer ${token || adminToken}`,

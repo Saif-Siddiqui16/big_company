@@ -79,7 +79,7 @@ export const AdminLoginPage: React.FC = () => {
     }
     setIsResettingPassword(true);
     try {
-      const token = localStorage.getItem('bigcompany_token');
+      const token = sessionStorage.getItem('bigcompany_token') || localStorage.getItem('bigcompany_token');
       const endpoint = `${API_URL}/admin/auth/update-password`;
       await axios.put(
         endpoint,

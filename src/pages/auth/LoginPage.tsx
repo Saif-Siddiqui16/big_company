@@ -304,7 +304,7 @@ export const LoginPage: React.FC = () => {
     }
     setIsResettingPassword(true);
     try {
-      const token = localStorage.getItem('temp_token') || localStorage.getItem('bigcompany_token');
+      const token = sessionStorage.getItem('temp_token') || sessionStorage.getItem('bigcompany_token') || localStorage.getItem('temp_token') || localStorage.getItem('bigcompany_token');
       const rolePrefix = activeRole === 'consumer' ? 'store' : activeRole;
       const endpoint = `${API_URL}/${rolePrefix}/auth/update-password`;
       const res = await axios.put(

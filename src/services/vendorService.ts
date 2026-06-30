@@ -16,7 +16,7 @@ export interface Vendor {
 
 class VendorService {
     private getAuthHeaders() {
-        const token = localStorage.getItem('admin_token') || localStorage.getItem('bigcompany_token');
+        const token = sessionStorage.getItem('admin_token') || sessionStorage.getItem('bigcompany_token') || localStorage.getItem('admin_token') || localStorage.getItem('bigcompany_token');
         return {
             headers: {
                 Authorization: `Bearer ${token}`,

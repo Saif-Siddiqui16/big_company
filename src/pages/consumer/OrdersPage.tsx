@@ -370,6 +370,13 @@ export const OrdersPage: React.FC = () => {
           y += 6;
         }
 
+        // Tax row (18% VAT included)
+        const taxAmount = Math.round((selectedOrder.total || 0) - (selectedOrder.total || 0) / 1.18);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.text('Tax (18% VAT included):', 130, y);
+        doc.text(taxAmount.toLocaleString() + ' RWF', pageWidth - 20, y, { align: 'right' });
+        y += 6;
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
         doc.text('TOTAL:', 130, y);
@@ -965,6 +972,14 @@ export const OrdersPage: React.FC = () => {
                 </Col>
               </Row>
             )}
+            <Row justify="space-between" style={{ marginBottom: 8 }}>
+              <Col>
+                <Text type="secondary">Tax (18% VAT included)</Text>
+              </Col>
+              <Col>
+                <Text type="secondary">{formatPrice(Math.round((selectedOrder.total || 0) - (selectedOrder.total || 0) / 1.18))}</Text>
+              </Col>
+            </Row>
             <Row justify="space-between">
               <Col>
                 <Text strong style={{ fontSize: 16 }}>Total</Text>
@@ -1154,6 +1169,10 @@ export const OrdersPage: React.FC = () => {
                   <Col><Text>{formatPrice(selectedOrder.delivery_fee || 0)}</Text></Col>
                 </Row>
               )}
+              <Row justify="space-between" style={{ marginBottom: 4 }}>
+                <Col><Text type="secondary">Tax (18% VAT included):</Text></Col>
+                <Col><Text type="secondary">{formatPrice(Math.round((selectedOrder.total || 0) - (selectedOrder.total || 0) / 1.18))}</Text></Col>
+              </Row>
               <Row justify="space-between" style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #000' }}>
                 <Col><Text strong style={{ fontSize: 16 }}>TOTAL:</Text></Col>
                 <Col><Text strong style={{ fontSize: 16 }}>{formatPrice(selectedOrder.total)}</Text></Col>

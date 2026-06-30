@@ -115,7 +115,7 @@ export const MyManagementPage: React.FC = () => {
   const fetchManagementData = async () => {
     setLoading(true);
     try {
-      const authToken = token || localStorage.getItem("bigcompany_token");
+      const authToken = token || sessionStorage.getItem("bigcompany_token") || localStorage.getItem("bigcompany_token");
 
       // Fetch suppliers from real API
       const suppliersResponse = await fetch(
@@ -193,7 +193,7 @@ export const MyManagementPage: React.FC = () => {
 
   const handleAddSupplier = async (values: any) => {
     try {
-      const authToken = token || localStorage.getItem("bigcompany_token");
+      const authToken = token || sessionStorage.getItem("bigcompany_token") || localStorage.getItem("bigcompany_token");
 
       const response = await fetch(
         `${API_URL}/wholesaler/management/suppliers`,
@@ -226,7 +226,7 @@ export const MyManagementPage: React.FC = () => {
   const handleEditSupplier = async (values: any) => {
     if (!selectedSupplier) return;
     try {
-      const authToken = token || localStorage.getItem("bigcompany_token");
+      const authToken = token || sessionStorage.getItem("bigcompany_token") || localStorage.getItem("bigcompany_token");
 
       const response = await fetch(
         `${API_URL}/wholesaler/management/suppliers/${selectedSupplier.id}`,

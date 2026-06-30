@@ -49,7 +49,7 @@ const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 
 export const ProfileSettingsPage: React.FC = () => {
-  const { user, login, updateUser } = useAuth(); // Assuming login or setUser can update context, but maybe just re-fetch is enough.
+  const { user, login, updateUser, logout } = useAuth(); // Assuming login or setUser can update context, but maybe just re-fetch is enough.
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [profileForm] = Form.useForm();
@@ -381,11 +381,26 @@ export const ProfileSettingsPage: React.FC = () => {
                   >
                     Change PIN
                   </Button>
+                  <Button
+                    block
+                    icon={<DollarOutlined />}
+                    onClick={() => {
+                      if (isRetailer) {
+                        window.location.href = '/retailer/wallet';
+                      } else if (isWholesaler) {
+                        window.location.href = '/wholesaler/wallet';
+                      } else {
+                        message.info('Wallet and payment methods are managed in your dashboard.');
+                      }
+                    }}
+                  >
+                    Manage Payment Methods
+                  </Button>
                   <Button block icon={<PhoneOutlined />}>
                     Two-Factor Auth
                   </Button>
                   <Divider />
-                  <Button block type="text" danger>
+                  <Button block type="text" danger onClick={logout}>
                     Logout from All Devices
                   </Button>
                 </Space>

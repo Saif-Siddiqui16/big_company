@@ -22,6 +22,7 @@ import {
   Form,
   InputNumber,
   Select,
+  Tooltip,
 } from 'antd';
 import {
   GiftOutlined,
@@ -414,7 +415,7 @@ export const RewardsPage: React.FC = () => {
                   Your Reward ID: <Text strong style={{ color: '#fff' }}>
                     {(() => {
                       try {
-                        const raw = localStorage.getItem('big_user') || localStorage.getItem('bigcompany_user') || '{}';
+                        const raw = sessionStorage.getItem('big_user') || sessionStorage.getItem('bigcompany_user') || localStorage.getItem('big_user') || localStorage.getItem('bigcompany_user') || '{}';
                         const u = JSON.parse(raw);
                         return u.phone || u.phone_number || u.email || u.id || '...';
                       } catch { return '...'; }
@@ -433,20 +434,24 @@ export const RewardsPage: React.FC = () => {
                 <Title level={2} style={{ color: 'white', margin: '8px 0 0 0' }}>
                   {((balance?.points || 0) * 0.01).toFixed(4)} M³
                 </Title>
-                <Button
-                  type="primary"
-                  icon={<SendOutlined />}
-                  onClick={() => setSendToMeterModalVisible(true)}
-                  disabled={(balance?.points || 0) * 0.01 < (gasConfig?.min_topup / (gasConfig?.price_per_m3 || 1500))}
-                  style={{
-                    background: (balance?.points || 0) * 0.01 < (gasConfig?.min_topup / (gasConfig?.price_per_m3 || 1500))
-                      ? 'rgba(255,255,255,0.1)'
-                      : 'rgba(255,255,255,0.2)',
-                    border: 'none'
-                  }}
-                >
-                  Send to Meter
-                </Button>
+                <Tooltip title={(balance?.points || 0) * 0.01 < 0.1 ? `Minimum 0.1 M³ required to send rewards to meter (Current: ${((balance?.points || 0) * 0.01).toFixed(4)} M³)` : ''}>
+                  <span>
+                    <Button
+                      type="primary"
+                      icon={<SendOutlined />}
+                      onClick={() => setSendToMeterModalVisible(true)}
+                      disabled={(balance?.points || 0) * 0.01 < 0.1}
+                      style={{
+                        background: (balance?.points || 0) * 0.01 < 0.1
+                          ? 'rgba(255,255,255,0.1)'
+                          : 'rgba(255,255,255,0.2)',
+                        border: 'none'
+                      }}
+                    >
+                      Send to Meter
+                    </Button>
+                  </span>
+                </Tooltip>
               </div>
               <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12 }}>
                 Cubic Meters
@@ -520,7 +525,7 @@ export const RewardsPage: React.FC = () => {
                         <Text strong>Share your gas rewards with your friends</Text>
                         <br />
                         <Text type="secondary" style={{ fontSize: 12 }}>
-                          While shopping share your gas rewards to your friend's meter ID
+                          While shopping, enter your friend's Reward Wallet ID to share your purchase rewards with them
                         </Text>
                       </Col>
                       <Col>
@@ -702,7 +707,7 @@ export const RewardsPage: React.FC = () => {
 
           <Form.Item
             name="meterId"
-            label={<Text strong>Recipient Meter Number (or ID)</Text>}
+            label={<Text strong>Recipient Meter Number</Text>}
             rules={[{ required: true, message: 'Please enter a meter number' }]}
           >
             <Input

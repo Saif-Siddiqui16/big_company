@@ -207,7 +207,7 @@ export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
                     </Col>
                 </Row>
 
-                <Divider orientation="left" style={{ margin: '12px 0', fontSize: '14px', color: '#1890ff' }}>Multi-Unit of Measure (Multi-UOM)</Divider>
+                <Divider titlePlacement="left" style={{ margin: '12px 0', fontSize: '14px', color: '#1890ff' }}>Multi-Unit of Measure (Multi-UOM)</Divider>
                 <Row gutter={16}>
                     <Col span={6}>
                         <Form.Item

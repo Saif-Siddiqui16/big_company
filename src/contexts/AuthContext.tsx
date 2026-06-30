@@ -22,10 +22,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isLoading: true,
   });
 
-  // Load auth state from localStorage on mount
+  // Load auth state from sessionStorage on mount
   useEffect(() => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    const userStr = localStorage.getItem(USER_KEY);
+    const token = sessionStorage.getItem(TOKEN_KEY);
+    const userStr = sessionStorage.getItem(USER_KEY);
 
     if (token && userStr) {
       try {
@@ -37,8 +37,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           isLoading: false,
         });
       } catch {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
+        sessionStorage.removeItem(TOKEN_KEY);
+        sessionStorage.removeItem(USER_KEY);
         setState(prev => ({ ...prev, isLoading: false }));
       }
     } else {
@@ -74,12 +74,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       user.role = role;
 
       if (response.require_password_reset) {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
+        sessionStorage.removeItem(TOKEN_KEY);
+        sessionStorage.removeItem(USER_KEY);
         
-        localStorage.setItem('temp_token', response.access_token);
-        localStorage.setItem('temp_role', role);
-        localStorage.setItem('temp_user', JSON.stringify(user));
+        sessionStorage.setItem('temp_token', response.access_token);
+        sessionStorage.setItem('temp_role', role);
+        sessionStorage.setItem('temp_user', JSON.stringify(user));
         setState({
           user: null,
           token: null,
@@ -89,12 +89,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return { require_password_reset: true };
       }
 
-      localStorage.setItem(TOKEN_KEY, response.access_token);
-      localStorage.setItem(USER_KEY, JSON.stringify(user));
+      sessionStorage.setItem(TOKEN_KEY, response.access_token);
+      sessionStorage.setItem(USER_KEY, JSON.stringify(user));
 
       // Also set admin_token for admin users (for backward compatibility with admin pages)
       if (role === 'admin') {
-        localStorage.setItem('admin_token', response.access_token);
+        sessionStorage.setItem('admin_token', response.access_token);
       }
 
       setState({
@@ -124,17 +124,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       };
 
       // Retrieve and merge full user details if available
-      const tempUserStr = localStorage.getItem('temp_user');
+      const tempUserStr = sessionStorage.getItem('temp_user');
       if (tempUserStr) {
         try {
           const tempUser = JSON.parse(tempUserStr);
           user = { ...user, ...tempUser };
         } catch (e) {}
-        localStorage.removeItem('temp_user');
+        sessionStorage.removeItem('temp_user');
       }
 
-      localStorage.setItem(TOKEN_KEY, token);
-      localStorage.setItem(USER_KEY, JSON.stringify(user));
+      sessionStorage.setItem(TOKEN_KEY, token);
+      sessionStorage.setItem(USER_KEY, JSON.stringify(user));
 
       setState({
         user,
@@ -148,8 +148,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = () => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem('admin_token');
     setState({
       user: null,
       token: null,
@@ -159,7 +160,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateUser = (updatedUser: User) => {
-    localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+    sessionStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
     setState(prev => ({
       ...prev,
       user: updatedUser
