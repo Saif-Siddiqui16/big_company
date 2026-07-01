@@ -64,6 +64,7 @@ interface Product {
   conversionFactor?: number;
   created_at: string;
   updated_at: string;
+  taxType?: string;
 }
 
 interface InventoryStats {
@@ -126,7 +127,17 @@ export const InventoryPage = () => {
 
   useEffect(() => {
     loadProducts();
-  }, [categoryFilter, showLowStock, profitMarginFilter, pagination.current]);
+
+    // Auto-refresh when user switches back to this tab (e.g., from Admin Panel)
+    const handleFocus = () => {
+      loadProducts(true);
+    };
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [categoryFilter, showLowStock, profitMarginFilter, pagination.current, searchTerm]);
 
   const loadCategories = async () => {
     try {
@@ -154,18 +165,28 @@ export const InventoryPage = () => {
 
       const data = response.data;
       // Normalize API response fields (API returns 'price', 'cost', 'threshold' but we use longer names)
-      let normalizedProducts = (data.products || []).map((p: any) => ({
-        ...p,
-        selling_price: p.selling_price || p.price || 0,
-        cost_price: p.cost_price || p.cost || p.costPrice || 0,
-        low_stock_threshold: p.low_stock_threshold || p.threshold || 10,
-      }));
+      let normalizedProducts = (data.products || []).map((p: any) => {
+        const pCostPrice = p.cost_price || p.cost || p.costPrice || 0;
+        const pSellingPrice = p.retailerPrice || p.selling_price || p.price || 0;
+
+        return {
+          ...p,
+          cost_price: pCostPrice,
+          selling_price: pSellingPrice,
+          low_stock_threshold: p.lowStockThreshold || p.threshold || 10,
+          taxType: p.taxType || 'B'
+        };
+      });
 
       // Apply profit margin filter (client-side)
       if (profitMarginFilter) {
         normalizedProducts = normalizedProducts.filter((p: Product) => {
+          // Pre-tax selling price estimation
+          const taxMultiplier = p.taxType === 'A' ? 1.15 : 1.05;
+          const preTaxSellingPrice = p.selling_price / taxMultiplier;
+          
           const margin = p.cost_price > 0
-            ? ((p.selling_price - p.cost_price) / p.cost_price) * 100
+            ? ((preTaxSellingPrice - p.cost_price) / p.cost_price) * 100
             : 0;
 
           switch (profitMarginFilter) {
@@ -524,8 +545,15 @@ export const InventoryPage = () => {
       title: 'Margin',
       key: 'margin',
       render: (_: any, record: Product) => {
+        let preTaxPrice = record.selling_price;
+        if (record.taxType === 'B') {
+          preTaxPrice = record.selling_price / 1.18; // Reverse VAT
+        } else if (record.taxType === 'D') {
+          preTaxPrice = record.selling_price / 1.298; // Reverse Excise (10%) + VAT (18%)
+        }
+
         const margin = record.cost_price > 0
-          ? ((record.selling_price - record.cost_price) / record.cost_price) * 100
+          ? ((preTaxPrice - record.cost_price) / record.cost_price) * 100
           : 0;
         return (
           <Text style={{ color: margin >= 20 ? '#52c41a' : margin >= 10 ? '#faad14' : '#ff4d4f' }}>

@@ -62,6 +62,7 @@ interface DailySalesStats {
   credit_wallet_transactions: number;    // Credit Wallet payments
   gas_rewards_m3: number;               // Gas rewards given in M³
   gas_rewards_rwf: number;              // Gas rewards value in RWF
+  max_discount_pct?: number;            // Dynamic limit from backend
 }
 
 interface Customer {
@@ -118,7 +119,7 @@ const POSPage = () => {
 
   // Discount
   const [discount, setDiscount] = useState(0);
-  const [discountType, setDiscountType] = useState<'fixed' | 'percent'>('fixed');
+  const [discountType, setDiscountType] = useState<'fixed' | 'percent'>('percent');
 
   const barcodeInputRef = useRef<any>(null);
 
@@ -754,12 +755,12 @@ const POSPage = () => {
                     onClick={() => {
                       if (discountAmount > 0 && subtotal > 0) {
                         const requestedDiscountPct = (discountAmount / subtotal) * 100;
-                        const maxAllowedDiscount = 5; // We could fetch this from config, but 5% is the strict default safety floor
+                        const maxAllowedDiscount = dailyStats?.max_discount_pct ?? 5; 
 
                         if (requestedDiscountPct > maxAllowedDiscount) {
                           Modal.error({
                             title: 'Transaction Blocked (Security Guardrail)',
-                            content: `Transaction Blocked: The requested discount of ${requestedDiscountPct.toFixed(1)}% exceeds the Admin-approved maximum limit of 5%. Please lower the discount to proceed.`,
+                            content: `Transaction Blocked: The requested discount of ${requestedDiscountPct.toFixed(1)}% exceeds the Admin-approved maximum limit of ${maxAllowedDiscount}%. Please lower the discount to proceed.`,
                             okText: 'Understood',
                             okButtonProps: { danger: true }
                           });

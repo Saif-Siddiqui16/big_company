@@ -491,10 +491,10 @@ export const ProfilePage: React.FC = () => {
                         )}
                       </Space>
                       <div style={{ marginTop: 12, paddingLeft: 52 }}>
-                        <Button 
-                          type="primary" 
-                          size="small" 
-                          ghost 
+                        <Button
+                          type="primary"
+                          size="small"
+                          ghost
                           onClick={() => window.location.href = `/consumer/shop?retailerId=${retailer.id}`}
                         >
                           Shop Now

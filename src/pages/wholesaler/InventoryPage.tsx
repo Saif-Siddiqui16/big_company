@@ -55,6 +55,7 @@ interface Product {
   status: 'active' | 'inactive';
   created_at: string;
   updated_at: string;
+  taxType?: string;
 }
 
 interface InventoryStats {
@@ -148,6 +149,7 @@ export const InventoryPage = () => {
         wholesale_price: p.price || 0,
         low_stock_threshold: p.lowStockThreshold || 0,
         invoice_number: p.invoiceNumber || '',
+        taxType: p.taxType || 'B',
       }));
       setProducts(productsList);
       setPagination(prev => ({ ...prev, total: productsData.total || 0 }));
@@ -179,7 +181,17 @@ export const InventoryPage = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [categoryFilter, lowStockFilter, pagination.current, pagination.pageSize]);
+
+    // Auto-refresh when user switches back to this tab (e.g., from Admin Panel)
+    const handleFocus = () => {
+      fetchProducts(true);
+    };
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [categoryFilter, lowStockFilter, pagination.current, pagination.pageSize, searchQuery]);
 
   const getStockStatus = (stock: number, threshold: number) => {
     if (stock === 0) return { color: 'red', text: 'Out of Stock', status: 'exception' as const };
@@ -361,8 +373,15 @@ export const InventoryPage = () => {
       title: 'Margin',
       key: 'margin',
       render: (_: any, record: Product) => {
+        let preTaxPrice = record.wholesale_price;
+        if (record.taxType === 'B') {
+          preTaxPrice = record.wholesale_price / 1.18; // Reverse VAT
+        } else if (record.taxType === 'D') {
+          preTaxPrice = record.wholesale_price / 1.298; // Reverse Excise (10%) + VAT (18%)
+        }
+        
         const margin = record.cost_price > 0
-          ? ((record.wholesale_price - record.cost_price) / record.cost_price) * 100
+          ? ((preTaxPrice - record.cost_price) / record.cost_price) * 100
           : 0;
         return <span style={{ color: margin > 0 ? '#22c55e' : '#ef4444' }}>{margin.toFixed(1)}%</span>;
       },

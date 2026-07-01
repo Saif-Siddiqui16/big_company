@@ -86,7 +86,8 @@ const GasMeterRechargePage: React.FC = () => {
 
     // Form values
     const [meterType, setMeterType] = useState<'LORA_NB' | 'GPRS'>('LORA_NB');
-    const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'credit_wallet' | 'mobile_money' | 'nfc_card'>('wallet');
+    const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'credit_wallet' | 'mobile_money'>('wallet');
+    const [mobileNetwork, setMobileNetwork] = useState<'mtn' | 'airtel' | null>(null);
     const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
     const [customAmount, setCustomAmount] = useState<string>('');
     const [pipingMode, setPipingMode] = useState<'ORDINARY' | 'TOKEN_PUSH'>('ORDINARY');
@@ -212,9 +213,15 @@ const GasMeterRechargePage: React.FC = () => {
             return;
         }
 
-        if (paymentMethod === 'mobile_money' && !values.phone) {
-            message.error('Please enter a phone number for mobile money payment.');
-            return;
+        if (paymentMethod === 'mobile_money') {
+            if (!mobileNetwork) {
+                message.error('Please select MTN or Airtel for mobile money payment.');
+                return;
+            }
+            if (!values.phone) {
+                message.error('Please enter a phone number for mobile money payment.');
+                return;
+            }
         }
 
         if ((paymentMethod === 'wallet' || paymentMethod === 'credit_wallet') && !values.smsPhone) {
@@ -226,9 +233,9 @@ const GasMeterRechargePage: React.FC = () => {
         try {
             // Direct client-side Piping meter API call has been disabled. All recharges strictly flow through the backend gasMeterRechargeApi.initiate now.
 
-            const response = await gasMeterRechargeApi.initiate({
+            const payload: any = {
                 meterNumber: values.meterNumber?.trim(),
-                meterType: 'TOKEN' as 'TOKEN' | 'PIPING',
+                meterType: 'TOKEN',
                 amount: selectionMode === 'units' ? volume : cost,
                 isVendByUnit: selectionMode === 'units',
                 paymentMethod,
@@ -236,7 +243,13 @@ const GasMeterRechargePage: React.FC = () => {
                 cardId: values.cardId,
                 token: values.pipingToken?.replace(/\s/g, ''),
                 provider: meterType === 'LORA_NB' ? 'stronpower' : 'zhongyi',
-            });
+            };
+
+            if (paymentMethod === 'mobile_money') {
+                payload.mobileNetwork = mobileNetwork;
+            }
+
+            const response = await gasMeterRechargeApi.initiate(payload);
 
             if (response.data.success) {
                 const data = response.data.data;
@@ -721,20 +734,31 @@ const GasMeterRechargePage: React.FC = () => {
                                             <Radio value="mobile_money">
                                                 <Space>
                                                     <MobileOutlined style={{ color: '#52c41a' }} />
-                                                    <span>Mobile Money (MTN / Airtel)</span>
+                                                    <span>Mobile Money</span>
                                                 </Space>
                                             </Radio>
-                                            {nfcCards.length > 0 && (
-                                                <Radio value="nfc_card">
-                                                    <Space>
-                                                        <CreditCardOutlined style={{ color: '#722ed1' }} />
-                                                        <span>NFC Card</span>
-                                                    </Space>
-                                                </Radio>
-                                            )}
                                         </Space>
                                     </Radio.Group>
                                 </Form.Item>
+
+                                {/* Mobile Network Selection */}
+                                {paymentMethod === 'mobile_money' && (
+                                    <Form.Item
+                                        label="Select Network"
+                                        required
+                                        style={{ marginTop: 0 }}
+                                    >
+                                        <Radio.Group 
+                                            value={mobileNetwork} 
+                                            onChange={(e) => setMobileNetwork(e.target.value)}
+                                        >
+                                            <Space direction="vertical">
+                                                <Radio value="mtn">MTN Mobile Money</Radio>
+                                                <Radio value="airtel">Airtel Money</Radio>
+                                            </Space>
+                                        </Radio.Group>
+                                    </Form.Item>
+                                )}
 
                                 {/* SMS Phone Number for Wallet or Credit Balance */}
                                 {(paymentMethod === 'wallet' || paymentMethod === 'credit_wallet') && (
@@ -753,35 +777,22 @@ const GasMeterRechargePage: React.FC = () => {
                                 )}
 
                                 {/* Mobile Money Phone */}
-                                {paymentMethod === 'mobile_money' && (
+                                {paymentMethod === 'mobile_money' && mobileNetwork && (
                                     <Form.Item
                                         name="phone"
-                                        label="Phone Number"
-                                        rules={[{ required: true, message: 'Enter phone number for mobile money.' }]}
+                                        label={`${mobileNetwork === 'mtn' ? 'MTN' : 'Airtel'} Phone Number`}
+                                        rules={[
+                                            { required: true, message: `Enter ${mobileNetwork === 'mtn' ? 'MTN' : 'Airtel'} phone number.` },
+                                            { pattern: /^[0-9]{10}$/, message: 'Please enter a valid 10-digit mobile number' }
+                                        ]}
                                     >
                                         <Input
                                             prefix={<MobileOutlined />}
                                             placeholder="e.g. 07XXXXXXXX"
+                                            maxLength={10}
                                             size="large"
                                             style={{ borderRadius: 8 }}
                                         />
-                                    </Form.Item>
-                                )}
-
-                                {/* NFC Card Selector */}
-                                {paymentMethod === 'nfc_card' && (
-                                    <Form.Item
-                                        name="cardId"
-                                        label="Select NFC Card"
-                                        rules={[{ required: true, message: 'Please select a card.' }]}
-                                    >
-                                        <Select placeholder="Choose card" size="large" style={{ borderRadius: 8 }}>
-                                            {nfcCards.map((card: any) => (
-                                                <Option key={card.id} value={card.id}>
-                                                    {card.nickname || card.uid} — {card.balance?.toLocaleString()} RWF
-                                                </Option>
-                                            ))}
-                                        </Select>
                                     </Form.Item>
                                 )}
 

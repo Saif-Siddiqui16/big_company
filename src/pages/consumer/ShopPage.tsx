@@ -137,18 +137,29 @@ export const ShopPage = () => {
 
   const formatPrice = (amount: number) => `${amount.toLocaleString()} RWF`;
 
-  // Set gas reward wallet ID when checkout modal opens, only for Dashboard Wallet
+  // FIXED: Always re-fetch the latest profile when checkout modal opens
+  // This ensures we always show the current reward ID, not a stale cached value
   useEffect(() => {
     if (showCheckoutModal) {
-      // Only pre-fill for Dashboard Wallet, leave empty for Mobile Money
-      if (paymentCategory === 'big_wallet' && paymentSubOption === 'dashboard' && gasRewardWalletId) {
-        checkoutForm.setFieldsValue({ gasRewardWalletId });
-      } else if (paymentCategory === 'mobile_money') {
-        // Don't auto-fill for mobile money - leave it empty
-        checkoutForm.setFieldsValue({ gasRewardWalletId: '' });
-      }
+      const fetchFreshRewardId = async () => {
+        try {
+          const profileRes = await consumerApi.getProfile();
+
+          if (profileRes.data.success) {
+            const freshRewardId = profileRes.data.data.gas_reward_wallet_id || null;
+            setGasRewardWalletId(freshRewardId);
+            // Always pre-fill with the fresh ID from the server (read-only display)
+            checkoutForm.setFieldsValue({ gasRewardWalletId: freshRewardId || '' });
+          }
+        } catch (err) {
+          console.error('Failed to fetch fresh reward wallet ID:', err);
+          // Fall back to the state value if fetch fails
+          checkoutForm.setFieldsValue({ gasRewardWalletId: gasRewardWalletId || '' });
+        }
+      };
+      fetchFreshRewardId();
     }
-  }, [showCheckoutModal, paymentCategory, paymentSubOption, gasRewardWalletId, checkoutForm]);
+  }, [showCheckoutModal]); // Only depends on modal open state — intentionally NOT on stale state vars
 
 
   useEffect(() => {
@@ -375,6 +386,12 @@ export const ShopPage = () => {
         backendPaymentMethod = 'mobile_money';
       }
 
+      // FIXED: Always use the server-fetched gasRewardWalletId state (not form value)
+      // The form field is read-only, but using state directly ensures correctness
+      const rewardIdToSend = (paymentCategory === 'big_wallet' && paymentSubOption === 'credit')
+        ? null // No rewards for credit wallet
+        : (gasRewardWalletId || null); // Use the fresh ID from server
+
       const payload = {
         retailerId: selectedRetailer.id,
         items: cartItems.map(item => ({
@@ -383,7 +400,7 @@ export const ShopPage = () => {
           price: item.price
         })),
         paymentMethod: backendPaymentMethod,
-        gasRewardWalletId: values.gasRewardWalletId || null, // What the customer typed at checkout
+        gasRewardWalletId: rewardIdToSend, // Always the server-verified ID
         total: cartTotal,
         metadata: {
           provider: paymentCategory === 'mobile_money' ? paymentSubOption : undefined
@@ -750,24 +767,31 @@ export const ShopPage = () => {
                 <div style={{ marginBottom: 24, padding: 16, background: '#f6ffed', borderRadius: 8, border: '1px solid #b7eb8f' }}>
                   <Text type="success" strong><StarFilled /> Earn Gas Rewards!</Text>
                   <Paragraph style={{ margin: '8px 0', fontSize: 13 }}>
-                    Enter your Gas Reward Wallet ID to receive 12% of your purchase as gas units. (Optional)
+                    You will receive 12% of your purchase as gas units, credited to your Gas Reward Wallet.
                   </Paragraph>
-                  <Form.Item
-                    name="gasRewardWalletId"
-                    label="Gas Reward Wallet ID"
-                    rules={[
-                      {
-                        required: false,
-                        message: 'Gas Reward Wallet ID'
-                      }
-                    ]}
-                    style={{ marginBottom: 0 }}
-                  >
-                    <Input
-                      placeholder="Gas Reward Wallet ID (Optional - GRW-...)"
-                      prefix={<WalletOutlined />}
+                  {gasRewardWalletId ? (
+                    <Form.Item
+                      name="gasRewardWalletId"
+                      label="Gas Reward Wallet ID"
+                      style={{ marginBottom: 0 }}
+                      extra={<span style={{ fontSize: 12, color: '#6b7280' }}>Auto-filled from your account. This cannot be changed at checkout.</span>}
+                    >
+                      <Input
+                        prefix={<WalletOutlined />}
+                        suffix={<LockOutlined style={{ color: '#9ca3af' }} />}
+                        readOnly
+                        style={{ cursor: 'not-allowed', background: '#f9fafb', color: '#374151', fontWeight: 600 }}
+                      />
+                    </Form.Item>
+                  ) : (
+                    <Alert
+                      type="warning"
+                      showIcon
+                      message="No Reward ID Found"
+                      description="Your account has no Gas Reward Wallet ID linked. Rewards cannot be credited. Please contact support."
+                      style={{ marginTop: 8 }}
                     />
-                  </Form.Item>
+                  )}
                 </div>
               )}
 
