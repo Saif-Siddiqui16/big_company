@@ -71,6 +71,8 @@ import RecruitmentPage from './pages/admin/RecruitmentPage';
 import VendorManagementPage from './pages/admin/VendorManagementPage';
 import DealsPage from './pages/admin/DealsPage';
 import PricingConfigPage from './pages/admin/PricingConfigPage';
+import RefundRequestsPage from './pages/admin/RefundRequestsPage';
+import ProfitInvoicesPage from './pages/admin/ProfitInvoicesPage';
 // New Admin Pages for Client Requirements
 import SettlementInvoicesPage from './pages/admin/SettlementInvoicesPage';
 import AccountDetailsPage from './pages/admin/AccountDetailsPage';
@@ -181,6 +183,7 @@ function App() {
               <Route path="inventory" element={<WholesalerInventoryPage />} />
               <Route path="orders" element={<WholesalerOrdersPage />} />
               <Route path="retailers" element={<RetailersPage />} />
+
               <Route path="link-requests" element={<LinkRequestsPage />} />
               <Route path="wallet" element={<WalletCreditPage />} />
               <Route path="management" element={<MyManagementPage />} />
@@ -222,6 +225,8 @@ function App() {
               <Route path="recruitment" element={<RecruitmentPage />} />
               <Route path="vendors" element={<VendorManagementPage />} />
               <Route path="deals" element={<DealsPage />} />
+              <Route path="refund-requests" element={<RefundRequestsPage />} />
+              <Route path="profit-invoices" element={<ProfitInvoicesPage />} />
             </Route>
 
             {/* Catch all - redirect to home */}

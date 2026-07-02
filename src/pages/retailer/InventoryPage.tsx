@@ -544,17 +544,10 @@ export const InventoryPage = () => {
     {
       title: 'Margin',
       key: 'margin',
-      render: (_: any, record: Product) => {
-        let preTaxPrice = record.selling_price;
-        if (record.taxType === 'B') {
-          preTaxPrice = record.selling_price / 1.18; // Reverse VAT
-        } else if (record.taxType === 'D') {
-          preTaxPrice = record.selling_price / 1.298; // Reverse Excise (10%) + VAT (18%)
-        }
-
-        const margin = record.cost_price > 0
-          ? ((preTaxPrice - record.cost_price) / record.cost_price) * 100
-          : 0;
+      render: (_: any, record: Product & { profitMargin?: number }) => {
+        // Use the globally monitored margin from backend if available, otherwise fallback
+        const margin = record.profitMargin !== undefined ? record.profitMargin : 
+          (record.cost_price > 0 ? ((record.selling_price - record.cost_price) / record.cost_price) * 100 : 0);
         return (
           <Text style={{ color: margin >= 20 ? '#52c41a' : margin >= 10 ? '#faad14' : '#ff4d4f' }}>
             {margin.toFixed(1)}%

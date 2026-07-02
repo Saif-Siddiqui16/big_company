@@ -30,6 +30,7 @@ import {
   RocketOutlined,
   SettingOutlined,
   ThunderboltOutlined,
+  UndoOutlined,
 } from '@ant-design/icons';
 import { BrandedName } from './BrandedName';
 import { useAuth } from '../contexts/AuthContext';
@@ -85,6 +86,8 @@ const menuItems: Record<UserRole, { key: string; icon: React.ReactNode; label: s
     { key: 'retailers', icon: <ShopOutlined />, label: 'Retailers', path: '/admin/retailers', mobileLabel: 'Retailers' },
     { key: 'wholesalers', icon: <TeamOutlined />, label: 'Wholesalers', path: '/admin/wholesalers', mobileLabel: 'Wholesalers' },
     { key: 'loans', icon: <DollarOutlined />, label: 'Loans', path: '/admin/loans', mobileLabel: 'Loans' },
+    { key: 'refund-requests', icon: <UndoOutlined />, label: 'Refund Requests', path: '/admin/refund-requests', mobileLabel: 'Refunds' },
+    { key: 'profit-invoices', icon: <FileTextOutlined />, label: 'Profit Invoices', path: '/admin/profit-invoices', mobileLabel: 'Profits' },
     { key: 'nfc-cards', icon: <CreditCardOutlined />, label: 'NFC Cards', path: '/admin/nfc-cards', mobileLabel: 'Cards' },
     { key: 'pricing-config', icon: <SettingOutlined />, label: 'Pricing Config', path: '/admin/pricing-config', mobileLabel: 'Pricing' },
     { key: 'reports', icon: <BarChartOutlined />, label: 'Reports', path: '/admin/reports', mobileLabel: 'Reports' },

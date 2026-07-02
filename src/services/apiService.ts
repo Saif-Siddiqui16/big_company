@@ -701,6 +701,14 @@ export const adminApi = {
     api.put(`/admin/customers/${id}/credit-limit`, { creditLimit }),
   getCustomerCreditLimit: (id: string) =>
     api.get(`/admin/customers/${id}/credit-limit`),
+
+  // Refund Requests
+  getRefundRequests: () => api.get("/admin/refund-requests"),
+  processRefundRequest: (id: number, data: any) => api.post(`/admin/refund-requests/${id}/process`, data),
+
+  // Profit Invoices
+  getProfitInvoices: () => api.get("/admin/profit-invoices"),
+  generateProfitInvoice: (orderId: number) => api.post("/admin/profit-invoices/generate", { orderId }),
 };
 
 // General Auth APIs (Protected)

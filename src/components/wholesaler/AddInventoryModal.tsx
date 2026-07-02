@@ -87,6 +87,11 @@ export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
                 values.image = base64;
             }
 
+            // Handle stock in purchase units conversion
+            if (values.conversionFactor > 0) {
+                values.stock = values.stock * values.conversionFactor;
+            }
+
             await wholesalerApi.createProduct(values);
 
             message.success('Inventory added successfully');
@@ -255,11 +260,6 @@ export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
                             rules={[{ required: true, message: 'Please enter initial stock' }]}
                         >
                             <InputNumber style={{ width: '100%' }} min={0} />
-                        </Form.Item>
-                        <Form.Item name="stockInPurchaseUnits" valuePropName="checked" noStyle>
-                            <Checkbox style={{ fontSize: '12px', marginTop: '-8px', display: 'block', marginBottom: '12px' }}>
-                                Stock quantity is in Purchase Units (convert to Base Units)
-                            </Checkbox>
                         </Form.Item>
                     </Col>
                     <Col span={12}>

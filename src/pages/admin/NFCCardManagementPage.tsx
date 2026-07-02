@@ -183,15 +183,6 @@ const NFCCardManagementPage: React.FC = () => {
       render: (text) => <span className="font-medium text-gray-700">{text}</span>,
     },
     {
-      title: 'Assigned To',
-      key: 'assigned_to',
-      render: (_, record) => (
-        <span className={record.cardholderName || record.user_name ? "text-gray-800" : "text-gray-400 italic"}>
-          {record.cardholderName || record.user_name || 'Unassigned'}
-        </span>
-      ),
-    },
-    {
       title: 'Balance Info',
       key: 'balance_info',
       render: (_, record) => (
@@ -268,6 +259,87 @@ const NFCCardManagementPage: React.FC = () => {
     
     return matchesSearch && matchesStatus;
   });
+
+  const groupedCards = React.useMemo(() => {
+    const groups: Record<string, { user_name: string, cards: NFCCard[] }> = {};
+    const unassigned: NFCCard[] = [];
+    
+    filteredCards.forEach(card => {
+      const ownerId = card.user_id || (card.consumerProfile ? card.consumerProfile.id : null) || card.cardholderName;
+      if (ownerId) {
+        const key = String(ownerId);
+        if (!groups[key]) {
+          groups[key] = { user_name: card.cardholderName || card.user_name || 'Unknown', cards: [] };
+        }
+        groups[key].cards.push(card);
+      } else {
+        unassigned.push(card);
+      }
+    });
+
+    const result = Object.keys(groups).map(key => ({
+      key,
+      user_name: groups[key].user_name,
+      cards: groups[key].cards,
+    }));
+    
+    if (unassigned.length > 0) {
+      result.push({
+        key: 'unassigned',
+        user_name: 'Unassigned',
+        cards: unassigned,
+      });
+    }
+
+    return result;
+  }, [filteredCards]);
+
+  const groupColumns: ColumnsType<any> = [
+    {
+      title: 'Assigned To',
+      dataIndex: 'user_name',
+      key: 'user_name',
+      render: (text, record) => (
+        <span className={record.key === 'unassigned' ? "text-gray-400 italic" : "text-gray-800 font-medium"}>
+          {text}
+        </span>
+      ),
+    },
+    {
+      title: 'Total Cards',
+      key: 'total_cards',
+      render: (_, record) => <span>{record.cards.length} cards</span>,
+    },
+    {
+      title: 'Total Dash Balance',
+      key: 'dash_balance',
+      render: (_, record) => {
+        const total = record.cards.reduce((sum: number, c: any) => sum + (c.dashboardBalance || 0), 0);
+        return <span className="font-semibold text-gray-800">{total.toLocaleString()} RWF</span>;
+      },
+    },
+    {
+      title: 'Total Credit Balance',
+      key: 'credit_balance',
+      render: (_, record) => {
+        const total = record.cards.reduce((sum: number, c: any) => sum + (c.creditBalance || 0), 0);
+        return <span className="font-semibold text-blue-600">{total.toLocaleString()} RWF</span>;
+      },
+    }
+  ];
+
+  const expandedRowRender = (record: any) => {
+    return (
+      <Table
+        columns={columns}
+        dataSource={record.cards}
+        pagination={false}
+        rowKey="id"
+        size="small"
+        className="bg-gray-50/50"
+      />
+    );
+  };
 
   const stats = [
     { title: 'Total Cards', value: cards.length, icon: <CreditCardOutlined />, border: '#1890ff' },
@@ -361,15 +433,16 @@ const NFCCardManagementPage: React.FC = () => {
         {/* Table Card */}
         <Card bordered={false} className="shadow-sm rounded-xl overflow-hidden p-0 mb-8 min-h-[500px]">
           <Table
-            columns={columns}
-            dataSource={filteredCards}
-            rowKey="id"
+            columns={groupColumns}
+            dataSource={groupedCards}
+            expandable={{ expandedRowRender }}
+            rowKey="key"
             loading={loading}
             className="exact-ui-table"
             pagination={{
               showSizeChanger: true,
               pageSize: 10,
-              showTotal: (total) => `Total ${total} cards`,
+              showTotal: (total) => `Total ${total} groups`,
               className: "px-6 py-4 border-t",
             }}
             locale={{

@@ -613,8 +613,6 @@ export const WalletPage = () => {
                 <Select>
                   <Option value="momo">MTN Mobile Money</Option>
                   <Option value="airtel">Airtel Money</Option>
-                  <Option value="bank_transfer">Bank Transfer</Option>
-                  <Option value="cash">Cash Agent</Option>
                 </Select>
               </Form.Item>
 
@@ -907,11 +905,11 @@ export const WalletPage = () => {
             <Col xs={24} sm={12} lg={6}>
               <Card>
                 <Statistic
-                  title="Available Credit"
-                  value={creditInfo?.credit_available || 0}
+                  title="Credit Balance"
+                  value={creditInfo?.credit_used || 0}
                   suffix="RWF"
-                  prefix={<CheckCircleOutlined />}
-                  valueStyle={{ color: '#52c41a' }}
+                  prefix={<DollarOutlined />}
+                  valueStyle={{ color: '#faad14' }}
                   formatter={(value) => value?.toLocaleString()}
                 />
               </Card>
@@ -919,11 +917,11 @@ export const WalletPage = () => {
             <Col xs={24} sm={12} lg={6}>
               <Card>
                 <Statistic
-                  title="Credit Used"
-                  value={creditInfo?.credit_used || 0}
+                  title="Available Credit"
+                  value={creditInfo?.credit_available || 0}
                   suffix="RWF"
-                  prefix={<DollarOutlined />}
-                  valueStyle={{ color: '#faad14' }}
+                  prefix={<CheckCircleOutlined />}
+                  valueStyle={{ color: '#52c41a' }}
                   formatter={(value) => value?.toLocaleString()}
                 />
               </Card>
