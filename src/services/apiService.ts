@@ -341,6 +341,14 @@ export const retailerApi = {
 
   // Gas Rewards Given
   getGasRewards: (params?: any) => api.get("/retailer/gas-rewards", { params }),
+
+  // Profit Invoices (Read-only)
+  getProfitInvoices: () => api.get("/retailer/profit-invoices"),
+
+  // Retailer Loans & Repayments
+  getLoans: () => api.get("/retailer/loans"),
+  repayLoan: (loanId: number, amount: number, paymentMethod: string, phone?: string) =>
+    api.post("/retailer/loans/repay", { loanId, amount, paymentMethod, phone }),
 };
 
 // Wholesaler APIs
@@ -421,6 +429,9 @@ export const wholesalerApi = {
   getProfile: () => api.get("/wholesaler/profile"),
   updateProfile: (data: any) => api.put("/wholesaler/profile", data),
   updateSettings: (data: any) => api.put("/wholesaler/settings", data),
+
+  // Profit Invoices (Read-only)
+  getProfitInvoices: () => api.get("/wholesaler/profit-invoices"),
 };
 
 // NFC Card APIs - for managing customer NFC cards
@@ -708,7 +719,9 @@ export const adminApi = {
 
   // Profit Invoices
   getProfitInvoices: () => api.get("/admin/profit-invoices"),
-  generateProfitInvoice: (orderId: number) => api.post("/admin/profit-invoices/generate", { orderId }),
+  generateProfitInvoice: (data: any) => api.post("/admin/profit-invoices/generate", data),
+  getProfitInvoiceRecipients: () => api.get("/admin/profit-invoices/recipients"),
+  getProfitInvoiceStats: (type: string, id: number) => api.get(`/admin/profit-invoices/stats/${type}/${id}`),
 };
 
 // General Auth APIs (Protected)

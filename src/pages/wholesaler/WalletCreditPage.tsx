@@ -359,7 +359,7 @@ export const WalletCreditPage: React.FC = () => {
       render: (_: any, record: any) => <Text strong>{formatCurrency(record.credit?.creditLimit || 0)}</Text>,
     },
     {
-      title: 'Credit Used',
+      title: 'Credit Balance',
       key: 'used',
       render: (_: any, record: any) => <Text style={{ color: '#fa8c16' }}>{formatCurrency(record.credit?.usedCredit || 0)}</Text>,
     },
@@ -562,7 +562,7 @@ export const WalletCreditPage: React.FC = () => {
               <Col xs={24} sm={12} lg={6}>
                 <Card size="small" bodyStyle={{ padding: '12px' }}>
                   <Statistic 
-                    title="Credit Used" 
+                    title="Credit Balance" 
                     value={walletStats?.creditUsed || 0} 
                     formatter={(v) => formatCurrency(Number(v))}
                     valueStyle={{ fontSize: '18px', color: '#fa8c16' }}
@@ -634,7 +634,7 @@ export const WalletCreditPage: React.FC = () => {
               </Space>
             </Descriptions.Item>
             <Descriptions.Item label="Phone">{selectedRequest.retailerPhone}</Descriptions.Item>
-            <Descriptions.Item label="Current Credit Used">{formatCurrency(selectedRequest.currentCredit)}</Descriptions.Item>
+            <Descriptions.Item label="Credit Balance">{formatCurrency(selectedRequest.currentCredit)}</Descriptions.Item>
             <Descriptions.Item label="Credit Limit">{formatCurrency(selectedRequest.creditLimit)}</Descriptions.Item>
             <Descriptions.Item label="Requested Amount">
               <Text strong style={{ color: '#1890ff', fontSize: 16 }}>{formatCurrency(selectedRequest.requestedAmount)}</Text>

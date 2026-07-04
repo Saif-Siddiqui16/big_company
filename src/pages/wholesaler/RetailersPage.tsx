@@ -459,7 +459,7 @@ const RetailersPage = () => {
       >
         {selectedRetailer && (
           <div style={{ marginBottom: '16px' }}>
-            <Text>Current Credit Used: <strong>{selectedRetailer.credit?.usedCredit?.toLocaleString()} RWF</strong></Text>
+            <Text>Credit Balance: <strong>{selectedRetailer.credit?.usedCredit?.toLocaleString()} RWF</strong></Text>
             <br />
             <Text>Current Limit: <strong>{selectedRetailer.credit?.creditLimit?.toLocaleString()} RWF</strong></Text>
           </div>

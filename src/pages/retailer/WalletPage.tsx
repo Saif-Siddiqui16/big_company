@@ -145,6 +145,8 @@ export const WalletPage = () => {
   const [creditPagination, setCreditPagination] = useState({ current: 1, pageSize: 10, total: 0 });
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [loans, setLoans] = useState<any[]>([]);
+  const [selectedLoan, setSelectedLoan] = useState<any>(null);
 
   // Modal states
   const [orderDetailsModal, setOrderDetailsModal] = useState<{ visible: boolean; order: CreditOrder | null }>({
@@ -205,19 +207,21 @@ export const WalletPage = () => {
     setError(null);
 
     try {
-      const [creditRes, ordersRes] = await Promise.all([
+      const [creditRes, ordersRes, loansRes] = await Promise.all([
         retailerApi.getCreditInfo(),
         retailerApi.getCreditOrders({
           status: statusFilter || undefined,
           limit: creditPagination.pageSize,
           offset: (creditPagination.current - 1) * creditPagination.pageSize,
         }),
+        retailerApi.getLoans()
       ]);
 
       setCreditInfo(creditRes.data?.credit || creditRes.data);
       setCreditRequests(creditRes.data?.requests || []);
       setCreditOrders(ordersRes.data?.orders || []);
       setCreditPagination(prev => ({ ...prev, total: ordersRes.data?.total || 0 }));
+      setLoans(loansRes.data?.data || []);
     } catch (err: any) {
       console.error('Credit data error:', err);
       // Create mock data if API fails
@@ -293,12 +297,18 @@ export const WalletPage = () => {
         await retailerApi.makeRepayment(repaymentModal.order.id, repaymentAmount);
         message.success(`Payment of ${(repaymentAmount ?? 0).toLocaleString()} RWF recorded successfully`);
       } else {
-        await retailerApi.payCredit(repaymentAmount, repaymentMethod);
-        message.success(`General credit repayment of ${(repaymentAmount ?? 0).toLocaleString()} RWF recorded successfully`);
+        if (!selectedLoan) {
+          message.warning('Please select a loan to repay');
+          setProcessing(false);
+          return;
+        }
+        await retailerApi.repayLoan(selectedLoan.id, repaymentAmount, repaymentMethod);
+        message.success(`Loan repayment of ${(repaymentAmount ?? 0).toLocaleString()} RWF recorded successfully`);
       }
       setRepaymentModal({ visible: false, order: null });
       setRepaymentAmount(0);
       setRepaymentMethod('wallet');
+      setSelectedLoan(null);
       fetchCreditData(true);
       fetchWalletData(true);
     } catch (err: any) {
@@ -506,6 +516,9 @@ export const WalletPage = () => {
       </div>
     );
   }
+
+  const activeLoans = loans.filter((l: any) => l.status?.toLowerCase() === 'active');
+  const totalRemainingLoanBalance = activeLoans.reduce((sum: number, l: any) => sum + (l.remainingAmount || 0), 0);
 
   return (
     <div style={{ padding: '16px' }}>
@@ -894,10 +907,11 @@ export const WalletPage = () => {
             <Col xs={24} sm={12} lg={6}>
               <Card>
                 <Statistic
-                  title="Credit Limit"
-                  value={creditInfo?.credit_limit || 0}
+                  title="Wallet Balance (Cash)"
+                  value={wallet?.balance || 0}
                   suffix="RWF"
-                  prefix={<BankOutlined />}
+                  prefix={<WalletOutlined />}
+                  valueStyle={{ color: '#52c41a' }}
                   formatter={(value) => value?.toLocaleString()}
                 />
               </Card>
@@ -905,8 +919,8 @@ export const WalletPage = () => {
             <Col xs={24} sm={12} lg={6}>
               <Card>
                 <Statistic
-                  title="Credit Balance"
-                  value={creditInfo?.credit_used || 0}
+                  title="Outstanding Loan Balance"
+                  value={totalRemainingLoanBalance}
                   suffix="RWF"
                   prefix={<DollarOutlined />}
                   valueStyle={{ color: '#faad14' }}
@@ -917,11 +931,10 @@ export const WalletPage = () => {
             <Col xs={24} sm={12} lg={6}>
               <Card>
                 <Statistic
-                  title="Available Credit"
-                  value={creditInfo?.credit_available || 0}
-                  suffix="RWF"
+                  title="Total Active Loans"
+                  value={activeLoans.length}
                   prefix={<CheckCircleOutlined />}
-                  valueStyle={{ color: '#52c41a' }}
+                  valueStyle={{ color: '#1890ff' }}
                   formatter={(value) => value?.toLocaleString()}
                 />
               </Card>
@@ -948,47 +961,6 @@ export const WalletPage = () => {
               </Card>
             </Col>
           </Row>
-
-          {/* Credit Utilization */}
-          <Card title="Credit Utilization" style={{ marginBottom: '24px' }}>
-            <Progress
-              percent={Math.round(((creditInfo?.credit_used || 0) / (creditInfo?.credit_limit || 1)) * 100)}
-              strokeColor={{
-                '0%': '#52c41a',
-                '50%': '#faad14',
-                '100%': '#ff4d4f',
-              }}
-              format={(percent) => (
-                <span>
-                  {percent}% used
-                </span>
-              )}
-            />
-            <Row justify="space-between" style={{ marginTop: '16px' }}>
-              <Col>
-                <Text type="secondary">Used: </Text>
-                <Text strong>{creditInfo?.credit_used?.toLocaleString() || 0} RWF</Text>
-              </Col>
-              <Col>
-                <Text type="secondary">Available: </Text>
-                <Text strong type="success">{creditInfo?.credit_available?.toLocaleString() || 0} RWF</Text>
-              </Col>
-            </Row>
-            {creditInfo?.next_payment_date && (
-              <Alert
-                message="Upcoming Payment"
-                description={
-                  <span>
-                    Next payment of <strong>{creditInfo.next_payment_amount?.toLocaleString()} RWF</strong> is due on{' '}
-                    <strong>{new Date(creditInfo.next_payment_date).toLocaleDateString()}</strong>
-                  </span>
-                }
-                type="info"
-                showIcon
-                style={{ marginTop: '16px' }}
-              />
-            )}
-          </Card>
 
           {/* Credit Orders Filters */}
           <Card style={{ marginBottom: '16px' }}>
@@ -1024,12 +996,14 @@ export const WalletPage = () => {
                     ghost
                     icon={<DollarOutlined />}
                     onClick={() => {
-                      setRepaymentAmount(creditInfo?.credit_used || 0);
+                      const firstActive = activeLoans[0] || null;
+                      setSelectedLoan(firstActive);
+                      setRepaymentAmount(firstActive?.remainingAmount || 0);
                       setRepaymentModal({ visible: true, order: null });
                     }}
-                    disabled={(creditInfo?.credit_used || 0) <= 0}
+                    disabled={activeLoans.length === 0}
                   >
-                    Pay Credit
+                    Pay Credit / Loan
                   </Button>
                   <Button
                     type="primary"
@@ -1041,6 +1015,88 @@ export const WalletPage = () => {
                 </Space>
               </Col>
             </Row>
+          </Card>
+
+          {/* Active Retailer Loans Table */}
+          <Card title={<><DollarOutlined /> Active Loans</>} style={{ marginBottom: '24px' }}>
+            {loans.length > 0 ? (
+              <Table
+                dataSource={loans}
+                columns={[
+                  {
+                    title: 'Loan #',
+                    dataIndex: 'id',
+                    key: 'id',
+                    render: (id: number) => <Text strong>#{id}</Text>
+                  },
+                  {
+                    title: 'Requested Amount',
+                    dataIndex: 'amount',
+                    key: 'amount',
+                    render: (amt: number) => `${amt?.toLocaleString()} RWF`
+                  },
+                  {
+                    title: 'Interest Rate',
+                    dataIndex: 'interestRate',
+                    key: 'interestRate',
+                    render: (rate: number) => `${rate}%`
+                  },
+                  {
+                    title: 'Total Repayable',
+                    dataIndex: 'totalRepayable',
+                    key: 'totalRepayable',
+                    render: (amt: number) => `${amt?.toLocaleString()} RWF`
+                  },
+                  {
+                    title: 'Remaining to Pay',
+                    dataIndex: 'remainingAmount',
+                    key: 'remainingAmount',
+                    render: (amt: number) => <Text strong style={{ color: amt > 0 ? '#faad14' : '#52c41a' }}>{amt?.toLocaleString()} RWF</Text>
+                  },
+                  {
+                    title: 'Status',
+                    dataIndex: 'status',
+                    key: 'status',
+                    render: (status: string) => (
+                      <Tag color={status === 'paid' ? 'green' : 'orange'}>
+                        {status?.toUpperCase()}
+                      </Tag>
+                    )
+                  },
+                  {
+                    title: 'Date',
+                    dataIndex: 'createdAt',
+                    key: 'createdAt',
+                    render: (date: string) => new Date(date).toLocaleDateString()
+                  },
+                  {
+                    title: 'Action',
+                    key: 'action',
+                    render: (_: any, record: any) => (
+                      <Button
+                        type="primary"
+                        ghost
+                        size="small"
+                        disabled={record.status === 'paid'}
+                        onClick={() => {
+                          setSelectedLoan(record);
+                          setRepaymentAmount(record.remainingAmount);
+                          setRepaymentModal({ visible: true, order: null });
+                        }}
+                      >
+                        Repay Loan
+                      </Button>
+                    )
+                  }
+                ]}
+                rowKey="id"
+                scroll={{ x: 800 }}
+                size="small"
+                pagination={{ pageSize: 5 }}
+              />
+            ) : (
+              <Empty description="No active or past loans found." />
+            )}
           </Card>
 
           {/* Credit Requests History Table */}
@@ -1248,12 +1304,13 @@ export const WalletPage = () => {
 
       {/* Repayment Modal */}
       <Modal
-        title={repaymentModal.order ? "Make Payment" : "General Credit Repayment"}
+        title={repaymentModal.order ? "Make Payment" : "Loan Repayment"}
         open={repaymentModal.visible}
         onCancel={() => {
           setRepaymentModal({ visible: false, order: null });
           setRepaymentAmount(0);
           setRepaymentMethod('wallet');
+          setSelectedLoan(null);
         }}
         onOk={handleMakeRepayment}
         confirmLoading={processing}
@@ -1276,11 +1333,44 @@ export const WalletPage = () => {
                 </Descriptions.Item>
               </>
             ) : (
-              <Descriptions.Item label="Total Credit Used">
-                <Text type="warning" strong>
-                  {creditInfo?.credit_used?.toLocaleString() || 0} RWF
-                </Text>
-              </Descriptions.Item>
+              <>
+                <Descriptions.Item label="Select Loan to Repay">
+                  <Select
+                    placeholder="Choose a loan"
+                    style={{ width: '100%' }}
+                    value={selectedLoan?.id}
+                    onChange={(val) => {
+                      const loan = loans.find(l => l.id === val);
+                      setSelectedLoan(loan);
+                      setRepaymentAmount(loan?.remainingAmount || 0);
+                    }}
+                  >
+                    {activeLoans.map(loan => (
+                      <Option key={loan.id} value={loan.id}>
+                        Loan #{loan.id} - Balance: {loan.remainingAmount?.toLocaleString()} RWF
+                      </Option>
+                    ))}
+                  </Select>
+                </Descriptions.Item>
+                {selectedLoan && (
+                  <>
+                    <Descriptions.Item label="Requested Amount">
+                      {selectedLoan.amount?.toLocaleString()} RWF
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Interest Rate">
+                      {selectedLoan.interestRate}%
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Total Repayable">
+                      {selectedLoan.totalRepayable?.toLocaleString()} RWF
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Remaining Balance">
+                      <Text type="warning" strong>
+                        {selectedLoan.remainingAmount?.toLocaleString()} RWF
+                      </Text>
+                    </Descriptions.Item>
+                  </>
+                )}
+              </>
             )}
             <Descriptions.Item label="Wallet Balance">
               <Text type="success" strong>
@@ -1294,7 +1384,7 @@ export const WalletPage = () => {
               <InputNumber
                 style={{ width: '100%' }}
                 min={1}
-                max={repaymentModal.order ? Math.min(repaymentModal.order.amount_pending, wallet?.balance || Infinity) : (creditInfo?.credit_used || Infinity)}
+                max={repaymentModal.order ? Math.min(repaymentModal.order.amount_pending, wallet?.balance || Infinity) : (selectedLoan?.remainingAmount || Infinity)}
                 value={repaymentAmount}
                 onChange={(v) => setRepaymentAmount(v || 0)}
                 formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
@@ -1332,10 +1422,10 @@ export const WalletPage = () => {
             />
           )}
 
-          {!repaymentModal.order && creditInfo && repaymentAmount >= creditInfo.credit_used && (
+          {!repaymentModal.order && selectedLoan && repaymentAmount >= selectedLoan.remainingAmount && (
             <Alert
               message="Debt Free"
-              description="This payment will fully clear your outstanding credit."
+              description="This payment will fully clear your outstanding loan."
               type="success"
               style={{ marginTop: '16px' }}
             />
@@ -1357,7 +1447,7 @@ export const WalletPage = () => {
         okText="Submit Request"
       >
         <Alert
-          message={`You have ${creditInfo?.credit_available?.toLocaleString()} RWF available credit`}
+          message={`Your maximum credit request limit is ${creditInfo?.credit_limit?.toLocaleString() || '500,000'} RWF`}
           type="info"
           style={{ marginBottom: '16px' }}
         />

@@ -615,7 +615,7 @@ const AddStockPage: React.FC = () => {
           {paymentMethod === 'credit' && creditInfo && (
             <>
               <Row justify="space-between">
-                <Text>Available Credit:</Text>
+                <Text>Credit Balance:</Text>
                 <Text strong style={{ color: '#722ed1' }}>
                   {creditInfo.available.toLocaleString()} RWF
                 </Text>

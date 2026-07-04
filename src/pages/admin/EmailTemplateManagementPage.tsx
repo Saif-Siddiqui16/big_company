@@ -342,6 +342,8 @@ const EmailTemplateManagementPage: React.FC = () => {
           >
             <Select placeholder="Select or enter trigger action" showSearch allowClear style={{ width: '100%' }}>
               <Option value="account creation">Account Creation</Option>
+              <Option value="sign up">Sign Up</Option>
+              <Option value="login attempt">Login Attempt</Option>
               <Option value="password reset">Password Reset</Option>
               <Option value="order confirmation">Order Confirmation</Option>
               <Option value="gas top-up">Gas Top-up</Option>

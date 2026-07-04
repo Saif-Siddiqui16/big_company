@@ -64,6 +64,7 @@ const menuItems: Record<UserRole, { key: string; icon: React.ReactNode; label: s
     { key: 'wallet', icon: <DollarOutlined />, label: 'Wallet & Credit', path: '/retailer/wallet', mobileLabel: 'Wallet' },
     { key: 'management', icon: <CreditCardOutlined />, label: 'My Management', path: '/retailer/management', mobileLabel: 'Manage' },
     { key: 'analytics', icon: <BarChartOutlined />, label: 'Analytics', path: '/retailer/analytics', mobileLabel: 'Stats' },
+    { key: 'profit-invoices', icon: <FileTextOutlined />, label: 'Profit Invoices', path: '/retailer/profit-invoices', mobileLabel: 'Invoices' },
     { key: 'profile', icon: <UserOutlined />, label: 'Profile', path: '/retailer/profile', mobileLabel: 'Profile' },
   ],
   wholesaler: [
@@ -75,6 +76,7 @@ const menuItems: Record<UserRole, { key: string; icon: React.ReactNode; label: s
     { key: 'wallet', icon: <CreditCardOutlined />, label: 'Wallet & Credit', path: '/wholesaler/wallet', mobileLabel: 'Wallet' },
     { key: 'management', icon: <ShopOutlined />, label: 'My Management', path: '/wholesaler/management', mobileLabel: 'Manage' },
     { key: 'analytics', icon: <BarChartOutlined />, label: 'Analytics', path: '/wholesaler/analytics', mobileLabel: 'Stats' },
+    { key: 'profit-invoices', icon: <FileTextOutlined />, label: 'Profit Invoices', path: '/wholesaler/profit-invoices', mobileLabel: 'Invoices' },
     { key: 'profile', icon: <UserOutlined />, label: 'Profile', path: '/wholesaler/profile', mobileLabel: 'Profile' },
   ],
   admin: [

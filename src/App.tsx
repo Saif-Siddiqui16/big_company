@@ -40,6 +40,7 @@ import RetailerAnalyticsPage from './pages/retailer/AnalyticsPage';
 import WholesalerDiscoveryPage from './pages/retailer/WholesalerDiscoveryPage';
 import CustomerLinkRequestsPage from './pages/retailer/CustomerLinkRequestsPage';
 import PurchaseOrdersPage from './pages/retailer/PurchaseOrdersPage'; // Add this
+import RetailerProfitInvoicesPage from './pages/retailer/ProfitInvoicesPage';
 
 // Wholesaler Pages
 import { WholesalerDashboard } from './pages/wholesaler/WholesalerDashboard';
@@ -50,6 +51,7 @@ import WholesalerAnalyticsPage from './pages/wholesaler/AnalyticsPage';
 import WalletCreditPage from './pages/wholesaler/WalletCreditPage';
 import MyManagementPage from './pages/wholesaler/MyManagementPage';
 import LinkRequestsPage from './pages/wholesaler/LinkRequestsPage';
+import WholesalerProfitInvoicesPage from './pages/wholesaler/ProfitInvoicesPage';
 import ProfileSettingsPage from './pages/shared/ProfileSettingsPage';
 
 // Admin Pages
@@ -167,6 +169,7 @@ function App() {
               <Route path="wholesalers" element={<WholesalerDiscoveryPage />} />
               <Route path="customer-requests" element={<CustomerLinkRequestsPage />} />
               <Route path="profile" element={<ProfileSettingsPage />} />
+              <Route path="profit-invoices" element={<RetailerProfitInvoicesPage />} />
             </Route>
 
             {/* Wholesaler Routes */}
@@ -189,6 +192,7 @@ function App() {
               <Route path="management" element={<MyManagementPage />} />
               <Route path="analytics" element={<WholesalerAnalyticsPage />} />
               <Route path="profile" element={<ProfileSettingsPage />} />
+              <Route path="profit-invoices" element={<WholesalerProfitInvoicesPage />} />
             </Route>
 
             {/* Admin Routes */}

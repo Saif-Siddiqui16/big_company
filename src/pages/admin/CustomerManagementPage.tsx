@@ -18,7 +18,8 @@ import {
   Avatar,
   Tooltip,
   Alert,
-  Divider
+  Divider,
+  Popconfirm
 } from 'antd';
 import {
   PlusOutlined,
@@ -125,6 +126,16 @@ const CustomerManagementPage: React.FC = () => {
       loadCustomers();
     } catch (error: any) {
       message.error(error.response?.data?.error || 'Failed to update status');
+    }
+  };
+
+  const handleDelete = async (record: Customer) => {
+    try {
+      await adminApi.deleteCustomer(record.id.toString());
+      message.success('Customer deleted successfully');
+      loadCustomers();
+    } catch (error: any) {
+      message.error(error.response?.data?.error || 'Failed to delete customer');
     }
   };
 
@@ -254,6 +265,21 @@ const CustomerManagementPage: React.FC = () => {
           >
             {record.user?.isActive ? 'Deactivate' : 'Activate'}
           </Button>
+          <Popconfirm
+            title="Delete the customer"
+            description="Are you sure to delete this customer?"
+            onConfirm={() => handleDelete(record)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button
+              type="text"
+              danger
+              icon={<DeleteOutlined />}
+            >
+              Delete
+            </Button>
+          </Popconfirm>
         </Space>
       ),
     },
@@ -501,16 +527,25 @@ const CustomerManagementPage: React.FC = () => {
         {selectedCustomer && (
           <div className="py-2">
             <Row gutter={[12, 12]}>
-              {/* Basic Info */}
-              <Col xs={24} sm={12}>
+              {/* Account Information */}
+              <Col span={24}>
+                <div className="bg-gray-50 p-3 rounded-lg mt-1">
+                  <Text strong className="text-sm">Account Information</Text>
+                </div>
+              </Col>
+              <Col xs={24} sm={8}>
                 <Text type="secondary" className="text-xs uppercase font-semibold">Customer ID</Text><br/>
                 <Text strong>{selectedCustomer.id}</Text>
               </Col>
-              <Col xs={24} sm={12}>
+              <Col xs={24} sm={8}>
                 <Text type="secondary" className="text-xs uppercase font-semibold">Status</Text><br/>
                 <Tag color={selectedCustomer.user?.isActive ? 'green' : 'red'}>
                   {selectedCustomer.user?.isActive ? 'Active' : 'Inactive'}
                 </Tag>
+              </Col>
+              <Col xs={24} sm={8}>
+                <Text type="secondary" className="text-xs uppercase font-semibold">Created At</Text><br/>
+                <Text>{selectedCustomer.created_at ? new Date(selectedCustomer.created_at).toLocaleString() : selectedCustomer.createdAt ? new Date(selectedCustomer.createdAt).toLocaleString() : 'N/A'}</Text>
               </Col>
 
               <Col span={24}>

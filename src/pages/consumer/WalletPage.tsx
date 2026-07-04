@@ -461,7 +461,7 @@ const ConsumerWalletPage: React.FC = () => {
                            <div>
                                <Text type="secondary" style={{ fontSize: 12 }}>Credit Balance</Text>
                                <Title level={3} style={{ margin: 0 }}>{(balance?.creditBalance || 0).toLocaleString()} RWF</Title>
-                               <Text style={{ fontSize: 11, color: '#8c8c8c' }}>Available credit</Text>
+                               <Text style={{ fontSize: 11, color: '#8c8c8c' }}>Credit Balance</Text>
                            </div>
                        </Space>
 

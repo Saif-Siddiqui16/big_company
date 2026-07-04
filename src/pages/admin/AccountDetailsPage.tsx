@@ -391,7 +391,7 @@ const AccountDetailsPage: React.FC = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="Available Credit"
+              title="Credit Balance"
               value={accountData.creditSummary?.availableCredit || 0}
               prefix={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
               suffix="RWF"
