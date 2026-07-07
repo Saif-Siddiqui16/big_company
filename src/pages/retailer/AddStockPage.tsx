@@ -116,18 +116,26 @@ const AddStockPage: React.FC = () => {
       console.error('Failed to load wallet:', error);
     }
 
-    // 3. Fetch Credit Info
+    // 3. Fetch Credit Info and Loans
     try {
-      const creditRes = await retailerApi.getCreditInfo();
+      const [creditRes, loansRes] = await Promise.all([
+        retailerApi.getCreditInfo(),
+        retailerApi.getLoans()
+      ]);
+      
+      const loans = loansRes.data?.data || [];
+      const activeLoans = loans.filter((l: any) => l.status?.toLowerCase() === 'active');
+      const totalRemainingLoanBalance = activeLoans.reduce((sum: number, l: any) => sum + (l.remainingAmount || 0), 0);
+
       if (creditRes.data?.credit) {
         setCreditInfo({
           available: creditRes.data.credit.credit_available,
           limit: creditRes.data.credit.credit_limit,
-          used: creditRes.data.credit.credit_used
+          used: totalRemainingLoanBalance
         });
       }
     } catch (error: any) {
-      console.error('Failed to load credit info:', error);
+      console.error('Failed to load credit info and loans:', error);
     }
 
     setLoading(false);
@@ -518,7 +526,7 @@ const AddStockPage: React.FC = () => {
                 >
                   <Select.Option value="wallet">Capital Wallet ({capitalWalletBalance.toLocaleString()} RWF)</Select.Option>
                   {creditInfo && creditInfo.limit > 0 && (
-                    <Select.Option value="credit">Wholesaler Credit ({creditInfo.available.toLocaleString()} RWF available)</Select.Option>
+                    <Select.Option value="credit">Wholesaler Credit ({creditInfo.used.toLocaleString()} RWF)</Select.Option>
                   )}
                   <Select.Option value="momo">Mobile Money (External Payment)</Select.Option>
                 </Select>
