@@ -126,11 +126,13 @@ const AddStockPage: React.FC = () => {
       const loans = loansRes.data?.data || [];
       const activeLoans = loans.filter((l: any) => l.status?.toLowerCase() === 'active');
       const totalRemainingLoanBalance = activeLoans.reduce((sum: number, l: any) => sum + (l.remainingAmount || 0), 0);
+      // Use principal amount only (not totalRepayable which includes interest) as spendable credit
+      const totalAvailablePrincipal = activeLoans.reduce((sum: number, l: any) => sum + (l.amount || 0), 0);
 
-      if (creditRes.data?.credit) {
+      if (creditRes.data?.credit || totalAvailablePrincipal > 0) {
         setCreditInfo({
-          available: creditRes.data.credit.credit_available,
-          limit: creditRes.data.credit.credit_limit,
+          available: totalAvailablePrincipal,
+          limit: creditRes.data.credit?.credit_limit || totalAvailablePrincipal,
           used: totalRemainingLoanBalance
         });
       }
@@ -526,7 +528,7 @@ const AddStockPage: React.FC = () => {
                 >
                   <Select.Option value="wallet">Capital Wallet ({capitalWalletBalance.toLocaleString()} RWF)</Select.Option>
                   {creditInfo && creditInfo.limit > 0 && (
-                    <Select.Option value="credit">Wholesaler Credit ({creditInfo.used.toLocaleString()} RWF)</Select.Option>
+                    <Select.Option value="credit">Wholesaler Credit ({creditInfo.available.toLocaleString()} RWF)</Select.Option>
                   )}
                   <Select.Option value="momo">Mobile Money (External Payment)</Select.Option>
                 </Select>
