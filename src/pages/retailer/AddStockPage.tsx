@@ -124,16 +124,16 @@ const AddStockPage: React.FC = () => {
       ]);
       
       const loans = loansRes.data?.data || [];
-      const activeLoans = loans.filter((l: any) => l.status?.toLowerCase() === 'active');
-      const totalRemainingLoanBalance = activeLoans.reduce((sum: number, l: any) => sum + (l.remainingAmount || 0), 0);
-      // Use principal amount only (not totalRepayable which includes interest) as spendable credit
-      const totalAvailablePrincipal = activeLoans.reduce((sum: number, l: any) => sum + (l.amount || 0), 0);
+      // Credit line persists even after repayment — filter on amount > 0, not status
+      // Repayment only clears remainingAmount (outstanding dues), NOT the credit line
+      const loansWithCredit = loans.filter((l: any) => (l.amount || 0) > 0);
+      const totalSpendableCredit = loansWithCredit.reduce((sum: number, l: any) => sum + (l.amount || 0), 0);
 
-      if (creditRes.data?.credit || totalAvailablePrincipal > 0) {
+      if (totalSpendableCredit > 0) {
         setCreditInfo({
-          available: totalAvailablePrincipal,
-          limit: creditRes.data.credit?.credit_limit || totalAvailablePrincipal,
-          used: totalRemainingLoanBalance
+          available: totalSpendableCredit,
+          limit: totalSpendableCredit,
+          used: 0
         });
       }
     } catch (error: any) {
