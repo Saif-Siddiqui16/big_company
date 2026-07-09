@@ -461,7 +461,7 @@ export const LoginPage: React.FC = () => {
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="email@big.co.rw"
+                        placeholder={activeRole === 'consumer' ? 'email@example.com' : 'email@big.co.rw'}
                         className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
                         required={authMethod === 'email'}
                       />

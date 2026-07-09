@@ -42,6 +42,8 @@ interface Product {
   price: number; // Wholesaler Price
   costPrice: number; // Supplier Price
   retailerPrice: number; // Retailer Price
+  supplierPrice?: number;
+  wholesalerPrice?: number;
   stock: number;
   unit: string;
   status: 'active' | 'inactive';
@@ -213,7 +215,7 @@ export const ProductListingPage = () => {
       title: 'Supplier Price',
       key: 'costPrice',
       render: (_: any, record: any) => {
-        const val = record.retailerId !== null && record.retailerId !== undefined ? 0 : record.costPrice;
+        const val = record.supplierPrice;
         return <Text style={{ color: '#666' }}>{val?.toLocaleString() || 0} RWF</Text>;
       }
     },
@@ -221,7 +223,7 @@ export const ProductListingPage = () => {
       title: 'Wholesaler Price',
       key: 'price',
       render: (_: any, record: any) => {
-        const val = record.retailerId !== null && record.retailerId !== undefined ? record.costPrice : record.price;
+        const val = record.wholesalerPrice;
         return <Text style={{ color: '#ff7a45' }}>{val?.toLocaleString() || 0} RWF</Text>;
       }
     },
@@ -229,7 +231,7 @@ export const ProductListingPage = () => {
       title: 'Retailer Price',
       key: 'retailerPrice',
       render: (_: any, record: any) => {
-        const val = record.retailerId !== null && record.retailerId !== undefined ? record.price : record.retailerPrice;
+        const val = record.retailerPrice;
         return <Text strong style={{ color: '#52c41a' }}>{val?.toLocaleString() || 0} RWF</Text>;
       }
     },
@@ -315,7 +317,7 @@ export const ProductListingPage = () => {
             <Space>
               <Button 
                 icon={<ReloadOutlined />} 
-                onClick={fetchProducts}
+                onClick={() => fetchProducts()}
                 style={{ borderRadius: '8px' }}
               >
                 Refresh
@@ -502,7 +504,7 @@ export const ProductListingPage = () => {
           <Row gutter={16}>
             <Col span={8}>
               <Form.Item name="stock" label="Stock (Aggregated)">
-                <InputNumber style={{ width: '100%' }} min={0} disabled={!!editingProduct} />
+                <InputNumber style={{ width: '100%' }} min={0} />
               </Form.Item>
             </Col>
             <Col span={8}>
