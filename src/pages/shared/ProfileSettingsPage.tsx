@@ -143,9 +143,10 @@ export const ProfileSettingsPage: React.FC = () => {
           });
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      message.error('Failed to update profile');
+      const errMsg = error.response?.data?.error || error.response?.data?.message || 'Failed to update profile';
+      message.error(errMsg);
     } finally {
       setLoading(false);
     }

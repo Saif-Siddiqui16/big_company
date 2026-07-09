@@ -62,15 +62,15 @@ export const ProductListingPage = () => {
 
   const [categoriesList, setCategoriesList] = useState<any[]>([]);
 
-  const fetchProducts = async () => {
-    setLoading(true);
+  const fetchProducts = async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       const response = await adminApi.getProducts();
       setProducts(response.data.products || []);
     } catch (error) {
       message.error('Failed to fetch products');
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 
@@ -88,6 +88,14 @@ export const ProductListingPage = () => {
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+
+    // Set up polling to automatically fetch real-time updates every 5 seconds silently
+    const interval = setInterval(() => {
+      fetchProducts(true);
+    }, 5000);
+
+    // Clean up the interval when the admin navigates away from the page
+    return () => clearInterval(interval);
   }, []);
 
   const handleAdd = () => {

@@ -537,26 +537,26 @@ const PricingConfigPage: React.FC = () => {
                 <div style={{ marginBottom: '12px' }}><Text strong style={{ color: '#52c41a' }}>WITH Meter ID (Gas Reward Eligible)</Text></div>
                 <Row justify="space-between" style={{ padding: '8px 0' }}>
                   <Col><Text type="secondary">Retailer Share</Text></Col>
-                  <Col><Tag color="blue">60%</Tag></Col>
+                  <Col><Tag color="blue">{config?.retailerShare ?? 60}%</Tag></Col>
                 </Row>
                 <Row justify="space-between" style={{ padding: '8px 0' }}>
                   <Col><Text type="secondary">Company Share</Text></Col>
-                  <Col><Tag color="orange">28%</Tag></Col>
+                  <Col><Tag color="orange">{config?.companyShare ?? 28}%</Tag></Col>
                 </Row>
                 <Row justify="space-between" style={{ padding: '8px 0' }}>
                   <Col><Text type="secondary">Gas Reward (M³)</Text></Col>
-                  <Col><Tag color="green">12%</Tag></Col>
+                  <Col><Tag color="green">{config?.gasRewardShare ?? 12}%</Tag></Col>
                 </Row>
               </Col>
               <Col span={12} style={{ borderLeft: '1px solid #f0f0f0' }}>
                 <div style={{ marginBottom: '12px' }}><Text strong style={{ color: '#ff4d4f' }}>WITHOUT Meter ID (No Gas Reward)</Text></div>
                 <Row justify="space-between" style={{ padding: '8px 0' }}>
                   <Col><Text type="secondary">Retailer Share</Text></Col>
-                  <Col><Tag color="blue">60%</Tag></Col>
+                  <Col><Tag color="blue">{config?.retailerShare ?? 60}%</Tag></Col>
                 </Row>
                 <Row justify="space-between" style={{ padding: '8px 0' }}>
                   <Col><Text type="secondary">Company Share</Text></Col>
-                  <Col><Tag color="red">40%</Tag></Col>
+                  <Col><Tag color="red">{100 - (config?.retailerShare ?? 60)}%</Tag></Col>
                 </Row>
                 <Row justify="space-between" style={{ padding: '8px 0' }}>
                   <Col><Text type="secondary">Gas Reward</Text></Col>

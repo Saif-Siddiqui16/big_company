@@ -42,7 +42,7 @@ import {
   PhoneOutlined,
 } from '@ant-design/icons';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { consumerApi } from '../../services/apiService';
+import { consumerApi, gasMeterRechargeApi } from '../../services/apiService';
 import { useCart, Retailer } from '../../contexts/CartContext';
 
 const { Title, Text, Paragraph } = Typography;
@@ -131,6 +131,7 @@ export const ShopPage = () => {
   const [paymentSubOption, setPaymentSubOption] = useState<'dashboard' | 'credit' | 'mtn' | 'airtel'>('dashboard');
 
   const [gasRewardWalletId, setGasRewardWalletId] = useState<string | null>(null);
+  const [gasRewardShare, setGasRewardShare] = useState<number>(12);
   const [checkoutForm] = Form.useForm();
   const [processingPayment, setProcessingPayment] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -143,13 +144,19 @@ export const ShopPage = () => {
     if (showCheckoutModal) {
       const fetchFreshRewardId = async () => {
         try {
-          const profileRes = await consumerApi.getProfile();
+          const [profileRes, configRes] = await Promise.all([
+            consumerApi.getProfile(),
+            gasMeterRechargeApi.getConfig()
+          ]);
 
           if (profileRes.data.success) {
             const freshRewardId = profileRes.data.data.gas_reward_wallet_id || null;
             setGasRewardWalletId(freshRewardId);
             // Always pre-fill with the fresh ID from the server (read-only display)
             checkoutForm.setFieldsValue({ gasRewardWalletId: freshRewardId || '' });
+          }
+          if (configRes.data.success && configRes.data.data.gas_reward_share !== undefined) {
+            setGasRewardShare(configRes.data.data.gas_reward_share);
           }
         } catch (err) {
           console.error('Failed to fetch fresh reward wallet ID:', err);
@@ -767,7 +774,7 @@ export const ShopPage = () => {
                 <div style={{ marginBottom: 24, padding: 16, background: '#f6ffed', borderRadius: 8, border: '1px solid #b7eb8f' }}>
                   <Text type="success" strong><StarFilled /> Earn Gas Rewards!</Text>
                   <Paragraph style={{ margin: '8px 0', fontSize: 13 }}>
-                    You will receive 12% of your purchase as gas units, credited to your Gas Reward Wallet.
+                    You will receive {gasRewardShare}% of your purchase as gas units, credited to your Gas Reward Wallet.
                   </Paragraph>
                   {gasRewardWalletId ? (
                     <Form.Item
