@@ -257,7 +257,8 @@ export const RewardsPage: React.FC = () => {
       const response = await consumerApi.sendToMeter({
         meterId: values.meterId,
         amount: values.amount, // Amount in m3
-        meterType: values.meterType
+        meterType: values.meterType,
+        phone: values.phone
       });
 
       if (response.data.success) {
@@ -268,7 +269,7 @@ export const RewardsPage: React.FC = () => {
             title: 'Reward Sent Successfully!',
             content: (
               <div>
-                <p>Successfully sent <strong>{amount} m³</strong> to Meter <strong>{meterNumber}</strong>.</p>
+                <p>Successfully sent <strong>{amount} RWF</strong> to Meter <strong>{meterNumber}</strong>.</p>
                 <div style={{ background: '#f5f5f5', padding: 12, borderRadius: 8, marginTop: 16, textAlign: 'center' }}>
                   <Text type="secondary" style={{ display: 'block', marginBottom: 4 }}>STS TOKEN</Text>
                   <Title level={3} style={{ margin: 0, letterSpacing: 2, color: '#1890ff' }}>{token}</Title>
@@ -749,6 +750,18 @@ export const RewardsPage: React.FC = () => {
               max={(balance?.points || 0) * 0.01}
               size="large"
               placeholder="0.00"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="phone"
+            label={<Text strong>SMS Phone Number</Text>}
+            rules={[{ required: true, message: 'Please enter SMS Phone Number' }]}
+          >
+            <Input
+              placeholder="e.g. 07XXXXXXXX"
+              size="large"
+              style={{ borderRadius: 8 }}
             />
           </Form.Item>
 

@@ -380,7 +380,7 @@ export const InventoryPage = () => {
           preTaxPrice = record.wholesale_price / 1.298; // Reverse Excise (10%) + VAT (18%)
         }
         
-        const margin = record.cost_price > 0
+        const margin = (record.cost_price > 0 && preTaxPrice > 0)
           ? ((preTaxPrice - record.cost_price) / record.cost_price) * 100
           : 0;
         return <span style={{ color: margin > 0 ? '#22c55e' : '#ef4444' }}>{margin.toFixed(1)}%</span>;

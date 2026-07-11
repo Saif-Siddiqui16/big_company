@@ -172,7 +172,7 @@ const AccountDetailsPage: React.FC = () => {
     <>
       {/* Wallet Summary */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} lg={8}>
           <Card>
             <Statistic
               title="Dashboard Wallet"
@@ -183,7 +183,7 @@ const AccountDetailsPage: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} lg={8}>
           <Card>
             <Statistic
               title="Credit Wallet"
@@ -194,19 +194,7 @@ const AccountDetailsPage: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Gas Balance"
-              value={accountData.walletSummary?.gasBalance || 0}
-              prefix={<FireOutlined style={{ color: '#cf1322' }} />}
-              suffix="M³"
-              precision={2}
-              valueStyle={{ color: '#cf1322' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} lg={8}>
           <Card>
             <Statistic
               title="Gas Reward Wallet"
@@ -380,7 +368,7 @@ const AccountDetailsPage: React.FC = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="Used Credit"
+              title="Outstanding Credit"
               value={accountData.creditSummary?.usedCredit || 0}
               prefix={<DollarOutlined style={{ color: '#f5222d' }} />}
               suffix="RWF"

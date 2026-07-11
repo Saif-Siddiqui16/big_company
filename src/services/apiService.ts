@@ -127,7 +127,7 @@ export const consumerApi = {
     api.post("/store/rewards/apply-referral", { code }),
   getLeaderboard: (period: "week" | "month" | "all") =>
     api.get("/store/gas/rewards/leaderboard", { params: { period } }),
-  sendToMeter: (data: { meterId: string; amount: number; meterType?: string }) =>
+  sendToMeter: (data: { meterId: string; amount: number; meterType?: string; phone?: string }) =>
     api.post("/rewards/send-to-meter", data),
 
   // Loans
@@ -722,6 +722,7 @@ export const adminApi = {
   generateProfitInvoice: (data: any) => api.post("/admin/profit-invoices/generate", data),
   getProfitInvoiceRecipients: () => api.get("/admin/profit-invoices/recipients"),
   getProfitInvoiceStats: (type: string, id: number) => api.get(`/admin/profit-invoices/stats/${type}/${id}`),
+  endGasPeriod: () => api.post("/admin/gas/end-period"),
 };
 
 // General Auth APIs (Protected)

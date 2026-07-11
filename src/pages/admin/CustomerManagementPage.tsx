@@ -39,7 +39,9 @@ import {
   TeamOutlined,
   ClockCircleOutlined,
   LockOutlined,
-  FundViewOutlined
+  FundViewOutlined,
+  ShoppingCartOutlined,
+  FireOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
@@ -74,6 +76,7 @@ const CustomerManagementPage: React.FC = () => {
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [gasStats, setGasStats] = useState({ totalPurchases: 0, totalAmount: 0, totalUnits: 0 });
 
   useEffect(() => {
     loadCustomers();
@@ -82,9 +85,15 @@ const CustomerManagementPage: React.FC = () => {
   const loadCustomers = async () => {
     setLoading(true);
     try {
-      const response = await adminApi.getCustomers();
-      if (response.data?.customers) {
-        setCustomers(response.data.customers);
+      const [customersRes, dashboardRes] = await Promise.all([
+        adminApi.getCustomers(),
+        adminApi.getDashboard()
+      ]);
+      if (customersRes.data?.customers) {
+        setCustomers(customersRes.data.customers);
+      }
+      if (dashboardRes.data?.dashboard?.gas) {
+        setGasStats(dashboardRes.data.dashboard.gas);
       }
     } catch (error: any) {
       console.error('Failed to load customers:', error);
@@ -293,7 +302,10 @@ const CustomerManagementPage: React.FC = () => {
     { title: 'Active', value: customers.filter(c => c.user?.isActive).length, icon: <CheckCircleOutlined />, color: '#52c41a', border: '#52c41a' },
     { title: 'Registered', value: customers.length, icon: <ClockCircleOutlined />, color: '#595959', border: '#595959' },
     { title: 'Total Orders', value: totalOrders, icon: <ShoppingOutlined />, color: '#722ed1', border: '#722ed1' },
-    { title: 'Total Revenue', value: `${totalRevenue.toLocaleString()} RWF`, icon: <DollarOutlined />, color: '#52c41a', border: '#52c41a' }
+    { title: 'Total Revenue', value: `${totalRevenue.toLocaleString()} RWF`, icon: <DollarOutlined />, color: '#52c41a', border: '#52c41a' },
+    { title: 'Total Gas Purchases', value: gasStats.totalPurchases, icon: <ShoppingCartOutlined />, color: '#2f54eb', border: '#2f54eb' },
+    { title: 'Total Gas Revenue', value: `${gasStats.totalAmount.toLocaleString()} RWF`, icon: <DollarOutlined />, color: '#fa8c16', border: '#fa8c16' },
+    { title: 'Total Units Distributed', value: `${gasStats.totalUnits.toFixed(2)} M³`, icon: <FireOutlined />, color: '#faad14', border: '#faad14' }
   ];
 
   return (
@@ -337,20 +349,48 @@ const CustomerManagementPage: React.FC = () => {
               >
                 Refresh
               </Button>
+              <Button 
+                danger
+                icon={<StopOutlined />} 
+                onClick={() => {
+                  Modal.confirm({
+                    title: 'End Month / Term',
+                    content: 'Are you sure you want to end the current gas billing cycle and start a new period? This will reset all gas purchases, revenues, units distributed, and customer gas metrics to zero globally.',
+                    okText: 'Yes, End Term',
+                    cancelText: 'Cancel',
+                    okType: 'danger',
+                    onOk: async () => {
+                      try {
+                        setLoading(true);
+                        await adminApi.endGasPeriod();
+                        message.success('Gas reporting period ended successfully and stats reset!');
+                        loadCustomers();
+                      } catch (error: any) {
+                        message.error(error.response?.data?.error || 'Failed to end gas period');
+                      } finally {
+                        setLoading(false);
+                      }
+                    }
+                  });
+                }}
+                style={{ borderRadius: '8px', height: '40px' }}
+              >
+                End Month/Term
+              </Button>
             </Space>
           </Col>
         </Row>
       </Card>
 
       {/* Stats Row */}
-      <Row gutter={16} style={{ marginBottom: '24px' }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
         {stats.map((s, i) => (
-          <Col key={i} flex={1}>
-            <Card bordered={false} style={{ borderRadius: '12px', borderTop: `4px solid ${s.border}` }}>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <Col key={i} xs={24} sm={12} md={8} lg={6} xl={3}>
+            <Card bordered={false} style={{ borderRadius: '12px', borderTop: `4px solid ${s.border}`, height: '100%' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
                 <Text type="secondary" style={{ fontSize: '13px', marginBottom: '8px' }}>{s.title}</Text>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: '24px', fontWeight: 'bold' }}>{s.value}</Text>
+                  <Text style={{ fontSize: '22px', fontWeight: 'bold' }}>{s.value}</Text>
                   <span style={{ fontSize: '24px', color: s.color, opacity: 0.8 }}>{s.icon}</span>
                 </div>
               </div>
