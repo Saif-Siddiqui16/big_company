@@ -69,6 +69,7 @@ interface InventoryStats {
   low_stock_count: number;
   out_of_stock_count: number;
   categories_count: number;
+  realizedProfit?: number;
 }
 
 const defaultCategories = [
@@ -162,12 +163,14 @@ export const InventoryPage = () => {
       const outOfStockCount = productsList.filter((p: Product) => p.stock === 0).length;
 
       setStats({
-        ...statsResponse.data,
-        stock_value_supplier_cost: statsResponse.data?.stock_value_supplier_cost || stockValueSupplierCost,
-        stock_value_wholesaler_price: statsResponse.data?.stock_value_wholesaler_price || stockValueWholesalerPrice,
-        stock_profit_margin: statsResponse.data?.stock_profit_margin || stockProfitMargin,
-        low_stock_count: statsResponse.data?.low_stock_count ?? lowStockCount,
-        out_of_stock_count: statsResponse.data?.out_of_stock_count ?? outOfStockCount,
+        total_products: statsResponse.data?.totalProducts ?? productsList.length,
+        stock_value_supplier_cost: statsResponse.data?.stockValueSupplier ?? stockValueSupplierCost,
+        stock_value_wholesaler_price: statsResponse.data?.stockValueWholesaler ?? stockValueWholesalerPrice,
+        stock_profit_margin: statsResponse.data?.stockProfitMargin ?? stockProfitMargin,
+        low_stock_count: statsResponse.data?.lowStockCount ?? lowStockCount,
+        out_of_stock_count: statsResponse.data?.outOfStockCount ?? outOfStockCount,
+        categories_count: categoriesResponse.data?.categories?.length || defaultCategories.length,
+        realizedProfit: statsResponse.data?.realizedProfit || 0
       });
       setCategories(categoriesResponse.data?.categories || defaultCategories);
     } catch (err: any) {

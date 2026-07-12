@@ -723,6 +723,46 @@ export const adminApi = {
   getProfitInvoiceRecipients: () => api.get("/admin/profit-invoices/recipients"),
   getProfitInvoiceStats: (type: string, id: number) => api.get(`/admin/profit-invoices/stats/${type}/${id}`),
   endGasPeriod: () => api.post("/admin/gas/end-period"),
+
+  // ==========================================
+  // ADMIN PROXY — WHOLESALER ORDER ACTIONS
+  // ==========================================
+  adminConfirmWholesalerOrder: (wId: string | number, orderId: string | number) =>
+    api.post(`/admin/wholesalers/${wId}/orders/${orderId}/confirm`),
+  adminRejectWholesalerOrder: (wId: string | number, orderId: string | number, reason: string) =>
+    api.post(`/admin/wholesalers/${wId}/orders/${orderId}/reject`, { reason }),
+  adminShipWholesalerOrder: (
+    wId: string | number,
+    orderId: string | number,
+    shipper_name: string,
+    shipper_phone: string,
+    vehicle_plate: string,
+    tracking_number?: string,
+    delivery_notes?: string
+  ) =>
+    api.post(`/admin/wholesalers/${wId}/orders/${orderId}/ship`, {
+      shipper_name,
+      shipper_phone,
+      vehicle_plate,
+      tracking_number,
+      delivery_notes,
+    }),
+
+  // ==========================================
+  // ADMIN PROXY — WHOLESALER INVENTORY ACTIONS
+  // ==========================================
+  adminUpdateWholesalerProduct: (wId: string | number, productId: string | number, data: any) =>
+    api.put(`/admin/wholesalers/${wId}/inventory/${productId}`, data),
+  adminUpdateWholesalerStock: (
+    wId: string | number,
+    productId: string | number,
+    quantity: number,
+    type: string,
+    reason?: string
+  ) =>
+    api.post(`/admin/wholesalers/${wId}/inventory/${productId}/stock`, { quantity, type, reason }),
+  adminDeleteWholesalerProduct: (wId: string | number, productId: string | number) =>
+    api.delete(`/admin/wholesalers/${wId}/inventory/${productId}`),
 };
 
 // General Auth APIs (Protected)

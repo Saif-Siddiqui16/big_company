@@ -78,18 +78,20 @@ export default function ProfitInvoicesPage() {
             if (response.data?.success) {
                 const stats = response.data.data;
                 
+                const totalOrders = stats.totalOrders || 0;
                 const totalRevenue = Math.round(stats.totalRevenue * 100) / 100;
                 const grossProfit = Math.round(stats.grossProfit * 100) / 100;
                 const rewardsGivenAmt = Math.round(stats.gasRewardsGiven * 100) / 100;
 
                 form.setFieldsValue({
+                    totalOrders,
                     totalRevenue,
                     grossProfit,
                     rewardsGivenAmt
                 });
                 
                 // Manually trigger calculation since setFieldsValue doesn't fire onValuesChange
-                const allValues = { ...form.getFieldsValue(), totalRevenue, grossProfit, rewardsGivenAmt };
+                const allValues = { ...form.getFieldsValue(), totalOrders, totalRevenue, grossProfit, rewardsGivenAmt };
                 onValuesChange({ grossProfit, rewardsGivenAmt }, allValues);
             }
         } catch (error: any) {
@@ -149,6 +151,12 @@ export default function ProfitInvoicesPage() {
             render: (_: any, record: any) => (
                 <Text strong>{record.recipientName} <span style={{color:'#8c8c8c', fontSize:'12px'}}>({record.recipientType})</span></Text>
             )
+        },
+        {
+            title: 'Total Orders',
+            dataIndex: 'totalOrders',
+            key: 'totalOrders',
+            render: (val: number) => <Text>{val || 0}</Text>
         },
         {
             title: 'Total Revenue',
@@ -244,18 +252,25 @@ export default function ProfitInvoicesPage() {
                         </Col>
                     </Row>
 
-                    <Divider orientation="left">Revenue & Profit</Divider>
+                    <Divider titlePlacement="left">Orders, Revenue & Profit</Divider>
                     <Row gutter={16}>
-                        <Col span={12}>
+                        <Col span={8}>
+                            <Form.Item name="totalOrders" label="Total Orders" rules={[{ required: true }]}>
+                                <Input type="number" readOnly style={{ background: '#f5f5f5' }} />
+                            </Form.Item>
+                        </Col>
+                        <Col span={8}>
                             <Form.Item name="totalRevenue" label="Total Revenue (RWF)" rules={[{ required: true }]}>
                                 <Input type="number" readOnly style={{ background: '#f5f5f5' }} />
                             </Form.Item>
                         </Col>
-                        <Col span={12}>
+                        <Col span={8}>
                             <Form.Item name="grossProfit" label="Gross Profit (RWF)">
                                 <Input type="number" readOnly style={{ background: '#f5f5f5' }} />
                             </Form.Item>
                         </Col>
+                    </Row>
+                    <Row gutter={16}>
                         <Col span={12}>
                             <Form.Item name="tax" label="Tax (RWF)">
                                 <Input type="number" />
@@ -268,7 +283,7 @@ export default function ProfitInvoicesPage() {
                         </Col>
                     </Row>
 
-                    <Divider orientation="left">Expenses</Divider>
+                    <Divider titlePlacement="left">Expenses</Divider>
                     <Row gutter={16}>
                         <Col span={6}>
                             <Form.Item name="rewardsGivenAmt" label="Rewards Given">
@@ -297,7 +312,7 @@ export default function ProfitInvoicesPage() {
                         </Col>
                     </Row>
 
-                    <Divider orientation="left">Splits (%)</Divider>
+                    <Divider titlePlacement="left">Splits (%)</Divider>
                     <Row gutter={16}>
                         <Col span={12}>
                             <Form.Item name="recipientSharePct" label="Recipient Share %">

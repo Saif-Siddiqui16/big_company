@@ -205,7 +205,7 @@ export const GasPage: React.FC = () => {
           meter_type: t.meter_type,
           meter_alias: t.meter_alias || 'Unnamed Meter',
           amount: t.amount,
-          units_purchased: t.units ? Number(t.units).toFixed(2) : Number(t.amount / rate).toFixed(2), 
+          units_purchased: t.units ? Number(t.units).toFixed(2) : Number(t.amount / rate).toFixed(2),
           token: t.token_value || 'N/A',
           payment_method: t.payment_method || 'Wallet',
           created_at: t.created_at,
@@ -340,17 +340,17 @@ export const GasPage: React.FC = () => {
     }
   };
 
-  const handleViewUsage = (meter: GasMeter) => {
+  const handleViewTopUpHistory = (meter: GasMeter) => {
     setSelectedMeterForUsage(meter);
 
-    // Transform history to show consumption as well
+    // Transform history to show only top-ups
     const usageData = history
       .filter(h => h.meter_number === meter.meter_number)
       .map(h => ({
         id: h.id,
         date: h.created_at,
-        activity: h.amount === 0 ? (h.token || 'Cooking Session') : 'Gas Top-up',
-        type: h.amount === 0 ? 'usage' as const : 'topup' as const,
+        activity: 'Gas Top-up',
+        type: 'topup' as const,
         units: Math.abs(Number(h.units_purchased))
       }));
 
@@ -669,21 +669,11 @@ export const GasPage: React.FC = () => {
                     <Button
                       type="text"
                       size="small"
-                      icon={<FireOutlined />}
-                      loading={simulating === meter.id}
-                      style={{ color: '#fffb8f', fontSize: 12 }}
-                      onClick={() => handleSimulateUsage(meter)}
-                    >
-                      Cook
-                    </Button>,
-                    <Button
-                      type="text"
-                      size="small"
                       icon={<HistoryOutlined />}
                       style={{ color: 'white', fontSize: 12 }}
-                      onClick={() => handleViewUsage(meter)}
+                      onClick={() => handleViewTopUpHistory(meter)}
                     >
-                      Usage
+                      Top Up History
                     </Button>,
                     <Button
                       type="text"
@@ -745,7 +735,7 @@ export const GasPage: React.FC = () => {
                       <div style={{ marginTop: 8, padding: '8px', background: 'rgba(255,255,255,0.15)', borderRadius: 6 }}>
                         <Row align="middle" gutter={8}>
                           <Col span={12}>
-                            <Text style={{ color: 'white', display: 'block', fontSize: 10 }}>UNITS LEFT</Text>
+                            <Text style={{ color: 'white', display: 'block', fontSize: 10 }}>UNITS PURCHASED</Text>
                             <Text strong style={{ color: 'white', fontSize: 14 }}>
                               {meter.meter_type === 'TOKEN' ? (meter.current_units * 0.53).toFixed(2) : meter.current_units.toFixed(2)} m³
                             </Text>
@@ -1189,12 +1179,12 @@ export const GasPage: React.FC = () => {
         )}
       </Modal>
 
-      {/* Gas Usage History Modal */}
+      {/* Top Up History Modal */}
       <Modal
         title={
           <Space>
             <HistoryOutlined />
-            <span>Gas Usage History - {selectedMeterForUsage?.alias}</span>
+            <span>Top Up History - {selectedMeterForUsage?.alias}</span>
           </Space>
         }
         open={showUsageHistory}
@@ -1215,8 +1205,8 @@ export const GasPage: React.FC = () => {
         {selectedMeterForUsage && (
           <>
             <Alert
-              title="Gas Usage Tracking"
-              description={`Showing gas usage history for meter ${selectedMeterForUsage.meter_number}. Blue units are from direct top-ups, green units are from shopping rewards.`}
+              message="Top Up History"
+              description={`Showing gas top-up transaction history for meter ${selectedMeterForUsage.meter_number}.`}
               type="info"
               showIcon
               style={{ marginBottom: 16 }}

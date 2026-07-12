@@ -108,6 +108,17 @@ export const RewardsPage: React.FC = () => {
   const [gasConfig, setGasConfig] = useState<any>(null);
   const [sendToMeterForm] = Form.useForm();
 
+  // Load initial value from storage, but update dynamically from the profile API
+  const [rewardId, setRewardId] = useState<string>(() => {
+    try {
+      const raw = sessionStorage.getItem('big_user') || sessionStorage.getItem('bigcompany_user') || localStorage.getItem('big_user') || localStorage.getItem('bigcompany_user') || '{}';
+      const u = JSON.parse(raw);
+      return u.phone || u.phone_number || u.email || u.id || '...';
+    } catch {
+      return '...';
+    }
+  });
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -187,6 +198,14 @@ export const RewardsPage: React.FC = () => {
           setGasConfig(configRes.data.data);
         }
       } catch (e) { console.error('Gas config fetch failed', e); }
+
+      // 6. Fetch Profile dynamically for the latest Reward ID
+      try {
+        const profileRes = await consumerApi.getProfile();
+        if (profileRes.data.success && profileRes.data.data.gas_reward_wallet_id) {
+          setRewardId(profileRes.data.data.gas_reward_wallet_id);
+        }
+      } catch (e) { console.error('Profile fetch failed', e); }
 
     } catch (error) {
       console.error('Failed to fetch rewards data:', error);
@@ -414,13 +433,7 @@ export const RewardsPage: React.FC = () => {
               <div style={{ marginTop: 8, background: 'rgba(255,255,255,0.1)', padding: '4px 12px', borderRadius: 16 }}>
                 <Text style={{ color: 'white', fontSize: 13 }}>
                   Your Reward ID: <Text strong style={{ color: '#fff' }}>
-                    {(() => {
-                      try {
-                        const raw = sessionStorage.getItem('big_user') || sessionStorage.getItem('bigcompany_user') || localStorage.getItem('big_user') || localStorage.getItem('bigcompany_user') || '{}';
-                        const u = JSON.parse(raw);
-                        return u.phone || u.phone_number || u.email || u.id || '...';
-                      } catch { return '...'; }
-                    })()}
+                    {rewardId}
                   </Text>
                 </Text>
               </div>
