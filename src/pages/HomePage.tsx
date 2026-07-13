@@ -918,8 +918,8 @@ export const HomePage: React.FC = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => message.info('More news and insights are being prepared!')}
-              className="text-blue-400 font-semibold flex items-center gap-2 hover:text-blue-300 transition-colors"
+              onClick={() => navigate('/news')}
+              className="text-blue-400 font-semibold flex items-center gap-2 hover:text-blue-300 transition-colors bg-transparent border-none outline-none cursor-pointer p-0"
             >
               View All News <ArrowRightIcon />
             </motion.button>

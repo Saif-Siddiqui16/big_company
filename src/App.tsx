@@ -82,6 +82,7 @@ import LinkageManagementPage from './pages/admin/LinkageManagementPage';
 import EmailMonitoringPage from './pages/admin/EmailMonitoringPage';
 import EmailTemplateManagementPage from './pages/admin/EmailTemplateManagementPage';
 import ContentManagementPage from './pages/admin/ContentManagementPage';
+import NewsPage from './pages/NewsPage';
 
 // Placeholder for pages not yet implemented
 const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
@@ -106,6 +107,7 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<HomePage />} />
+            <Route path="/news" element={<NewsPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/auth/register" element={<RegisterPage />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />

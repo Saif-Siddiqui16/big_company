@@ -486,7 +486,7 @@ export const GasPage: React.FC = () => {
       key: 'units_purchased',
       render: (units: string | number, record: GasTopup) => {
         const unitsNum = Number(units) || 0;
-        const unitsM3 = record.meter_type === 'TOKEN' ? unitsNum * 0.53 : unitsNum;
+        const unitsM3 = unitsNum;
         return (
           <Text strong style={{ color: '#52c41a' }}>
             {unitsM3.toFixed(2)} m³
@@ -545,7 +545,7 @@ export const GasPage: React.FC = () => {
       dataIndex: 'units',
       key: 'units',
       render: (units: number, record: any) => {
-        const unitsM3 = record.meter_type === 'TOKEN' ? units * 0.53 : units;
+        const unitsM3 = units;
         return (
           <Text strong style={{ color: record.type === 'usage' ? '#ff4d4f' : '#52c41a' }}>
             {record.type === 'usage' ? '-' : '+'}{unitsM3.toFixed(2)} m³
@@ -567,7 +567,7 @@ export const GasPage: React.FC = () => {
   const totalAmount = history.reduce((sum, item) => sum + (item.amount || 0), 0);
   const totalUnits = history.reduce((sum, item) => {
     const rawUnits = Number(item.units_purchased) || 0;
-    const unitsM3 = item.meter_type === 'TOKEN' ? rawUnits * 0.53 : rawUnits;
+    const unitsM3 = rawUnits;
     return sum + unitsM3;
   }, 0);
 
@@ -737,7 +737,7 @@ export const GasPage: React.FC = () => {
                           <Col span={12}>
                             <Text style={{ color: 'white', display: 'block', fontSize: 10 }}>UNITS PURCHASED</Text>
                             <Text strong style={{ color: 'white', fontSize: 14 }}>
-                              {meter.meter_type === 'TOKEN' ? (meter.current_units * 0.53).toFixed(2) : meter.current_units.toFixed(2)} m³
+                              {meter.current_units.toFixed(2)} m³
                             </Text>
                           </Col>
                           <Col span={12} style={{ textAlign: 'right' }}>

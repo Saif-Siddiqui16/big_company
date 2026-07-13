@@ -1417,7 +1417,7 @@ const AccountDetailsPage: React.FC = () => {
                 selling_price: pSellingPrice,
                 low_stock_threshold: p.lowStockThreshold || p.threshold || 10,
               };
-            });
+            }).sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
 
             const totalProductsCount = normalizedInvProducts.length;
             const totalInventoryValue = normalizedInvProducts.reduce(
