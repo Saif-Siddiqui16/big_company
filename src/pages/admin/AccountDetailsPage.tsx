@@ -1609,7 +1609,8 @@ const AccountDetailsPage: React.FC = () => {
                       title: 'Margin',
                       key: 'margin',
                       render: (_: any, record: any) => {
-                        const margin = record.cost_price > 0 ? ((record.selling_price - record.cost_price) / record.cost_price) * 100 : 0;
+                        const margin = record.profitMargin !== undefined ? record.profitMargin : 
+                          (record.cost_price > 0 ? ((record.selling_price - record.cost_price) / record.cost_price) * 100 : 0);
                         return (
                           <Text style={{ color: margin >= 20 ? '#52c41a' : margin >= 10 ? '#faad14' : '#ff4d4f' }}>
                             {margin.toFixed(1)}%
