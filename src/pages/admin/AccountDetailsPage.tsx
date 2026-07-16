@@ -660,7 +660,7 @@ const AccountDetailsPage: React.FC = () => {
           <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
             <Col span={6}><Statistic title="Total Top-ups" value={accountData.gasUsage?.totalTopups || 0} /></Col>
             <Col span={6}><Statistic title="Total Amount" value={accountData.gasUsage?.totalAmount || 0} suffix="RWF" /></Col>
-            <Col span={6}><Statistic title="Total Units" value={accountData.gasUsage?.totalUnits || 0} suffix="M³" /></Col>
+            <Col span={6}><Statistic title="Total Units" value={Number(accountData.gasUsage?.totalUnits || 0).toFixed(2)} suffix="M³" /></Col>
             <Col span={6}><Statistic title="Total Rewards" value={accountData.gasUsage?.totalRewards || 0} suffix="M³" precision={4} /></Col>
           </Row>
           <Divider>Gas Meters</Divider>
