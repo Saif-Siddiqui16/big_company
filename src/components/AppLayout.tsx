@@ -255,16 +255,7 @@ export const AppLayout: React.FC = () => {
           }}
         >
           <div className="py-2">
-            {/* Home Button */}
-            <div
-              className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => { navigate('/'); setDrawerVisible(false); }}
-            >
-              <HomeOutlined style={{ fontSize: 20, color: '#6b7280' }} />
-              <span className="text-gray-700">Back to Home</span>
-            </div>
 
-            <div className="h-px bg-gray-100 my-2" />
 
             {/* Menu Items */}
             {currentMenuItems.map((item) => {
@@ -450,15 +441,7 @@ export const AppLayout: React.FC = () => {
             transition: 'left 0.2s',
           }}
         >
-          <Space>
-            <Button
-              type="text"
-              icon={<HomeOutlined />}
-              onClick={() => navigate('/')}
-            >
-              Home
-            </Button>
-          </Space>
+          <div />
 
           {/* User dropdown */}
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
