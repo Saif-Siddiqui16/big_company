@@ -701,6 +701,8 @@ export const adminApi = {
 
   getEmailTemplates: () => api.get('/admin/email-templates'),
   saveEmailTemplate: (data: any) => api.post('/admin/email-templates', data),
+  previewEmailTemplate: (data: any) => api.post('/admin/email-templates/preview', data),
+  getTemplateVariables: () => api.get('/admin/email-templates/variables'),
   deleteEmailTemplate: (id: number) => api.delete(`/admin/email-templates/${id}`),
 
   sendManualEmail: (data: { recipients?: string[]; groups?: string[]; subject: string; html: string; category?: string }) => api.post('/admin/send-manual-email', data),

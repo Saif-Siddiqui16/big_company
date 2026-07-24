@@ -38,6 +38,12 @@ const EmailTemplateManagementPage: React.FC = () => {
   const [form] = Form.useForm();
   const [eventForm] = Form.useForm();
 
+  // Preview & Variables State
+  const [variables, setVariables] = useState<string[]>([]);
+  const [previewContent, setPreviewContent] = useState<{ subject: string; content: string; isSMS: boolean } | null>(null);
+  const [previewModalVisible, setPreviewModalVisible] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
   const fetchTemplates = async () => {
     setLoading(true);
     try {
@@ -63,9 +69,21 @@ const EmailTemplateManagementPage: React.FC = () => {
     }
   };
 
+  const fetchVariables = async () => {
+    try {
+      const response = await adminApi.getTemplateVariables();
+      if (response.data.success) {
+        setVariables(response.data.variables);
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch template variables', error);
+    }
+  };
+
   useEffect(() => {
     fetchTemplates();
     fetchEvents();
+    fetchVariables();
   }, []);
 
   const handleAdd = () => {
@@ -129,6 +147,43 @@ const EmailTemplateManagementPage: React.FC = () => {
       if (error.name !== 'ValidationError') {
         message.error('Failed to save template: ' + (error.response?.data?.error || error.message));
       }
+    }
+  };
+
+  const insertVariable = (varName: string) => {
+    const contentVal = form.getFieldValue('content') || '';
+    const textarea = document.getElementById('template_content_textarea') as HTMLTextAreaElement;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newValue = contentVal.substring(0, start) + `{{${varName}}}` + contentVal.substring(end);
+      form.setFieldsValue({ content: newValue });
+      textarea.focus();
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + varName.length + 4;
+      }, 0);
+    } else {
+      form.setFieldsValue({ content: contentVal + `{{${varName}}}` });
+    }
+  };
+
+  const handlePreview = async () => {
+    try {
+      const values = await form.validateFields(['subject', 'content', 'channel']);
+      setPreviewLoading(true);
+      const response = await adminApi.previewEmailTemplate({
+        subject: values.subject,
+        content: values.content,
+        channel: values.channel
+      });
+      if (response.data.success) {
+        setPreviewContent(response.data.data);
+        setPreviewModalVisible(true);
+      }
+    } catch (error: any) {
+      message.error('Failed to generate preview: ' + (error.response?.data?.error || error.message));
+    } finally {
+      setPreviewLoading(false);
     }
   };
 
@@ -291,10 +346,9 @@ const EmailTemplateManagementPage: React.FC = () => {
       <Modal
         title={editingTemplate ? "Edit Email Template" : "Create New Template"}
         open={isModalVisible}
-        onOk={handleModalOk}
         onCancel={() => setIsModalVisible(false)}
         width={800}
-        okText="Save Template"
+        footer={null}
       >
         <Form
           form={form}
@@ -372,14 +426,31 @@ const EmailTemplateManagementPage: React.FC = () => {
             <Input placeholder="What is this template used for?" />
           </Form.Item>
 
+          <div style={{ marginBottom: 12 }}>
+            <Text type="secondary" style={{ display: 'block', marginBottom: 6 }}>Available Variables (Click to insert):</Text>
+            <Space size={[4, 8]} wrap>
+              {variables.map(v => (
+                <Tag 
+                  key={v} 
+                  color="blue" 
+                  style={{ cursor: 'pointer', padding: '4px 8px', fontSize: '13px' }}
+                  onClick={() => insertVariable(v)}
+                >
+                  {`{{${v}}}`}
+                </Tag>
+              ))}
+            </Space>
+          </div>
+
           <Form.Item
             name="content"
-            label="HTML Content"
-            rules={[{ required: true, message: 'Please enter the email content' }]}
+            label="Template Content (HTML or Plain Text)"
+            rules={[{ required: true, message: 'Please enter the template content' }]}
           >
             <TextArea 
-              rows={12} 
-              placeholder="<h1>Hello {{name}}</h1><p>Your account is ready.</p>" 
+              id="template_content_textarea"
+              rows={10} 
+              placeholder="Hello {{Customer_name}}, your recharge of {{amount}} RWF for meter {{meter_id}} was successful." 
             />
           </Form.Item>
 
@@ -391,6 +462,66 @@ const EmailTemplateManagementPage: React.FC = () => {
             <Switch checkedChildren="Active" unCheckedChildren="Inactive" />
           </Form.Item>
         </Form>
+        <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16, marginTop: 16, display: 'flex', justifyContent: 'space-between' }}>
+          <Button onClick={handlePreview} loading={previewLoading} icon={<MailOutlined />}>
+            Preview Template
+          </Button>
+          <Space>
+            <Button onClick={() => setIsModalVisible(false)}>Cancel</Button>
+            <Button type="primary" onClick={handleModalOk}>Save Template</Button>
+          </Space>
+        </div>
+      </Modal>
+
+      {/* Template Preview Modal */}
+      <Modal
+        title="Template Render Preview"
+        open={previewModalVisible}
+        onCancel={() => setPreviewModalVisible(false)}
+        footer={[
+          <Button key="close" type="primary" onClick={() => setPreviewModalVisible(false)}>
+            Close Preview
+          </Button>
+        ]}
+        width={700}
+      >
+        {previewContent && (
+          <div style={{ background: '#f5f5f5', padding: '16px', borderRadius: '8px' }}>
+            <div style={{ marginBottom: '12px' }}>
+              <Text type="secondary">Subject: </Text>
+              <Text strong>{previewContent.subject || '(None/SMS)'}</Text>
+            </div>
+            <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: '12px' }}>
+              <Text type="secondary">Content Preview:</Text>
+              {previewContent.isSMS ? (
+                <div style={{ 
+                  background: '#e1ffc7', 
+                  padding: '12px', 
+                  borderRadius: '12px', 
+                  maxWidth: '350px', 
+                  margin: '12px auto',
+                  border: '1px solid #b7e197',
+                  fontFamily: 'sans-serif'
+                }}>
+                  <Paragraph style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{previewContent.content}</Paragraph>
+                </div>
+              ) : (
+                <div 
+                  style={{ 
+                    background: '#ffffff', 
+                    border: '1px solid #e0e0e0', 
+                    borderRadius: '4px',
+                    padding: '16px',
+                    marginTop: '8px',
+                    maxHeight: '400px',
+                    overflowY: 'auto'
+                  }}
+                  dangerouslySetInnerHTML={{ __html: previewContent.content }}
+                />
+              )}
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Event Mapping Edit Modal */}
