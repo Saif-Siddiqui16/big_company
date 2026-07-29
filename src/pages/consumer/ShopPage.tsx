@@ -407,6 +407,7 @@ export const ShopPage = () => {
           price: item.price
         })),
         paymentMethod: backendPaymentMethod,
+        phone: backendPaymentMethod === 'mobile_money' ? values.mobileNumber : undefined,
         gasRewardWalletId: rewardIdToSend, // Always the server-verified ID
         total: cartTotal,
         metadata: {
