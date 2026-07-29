@@ -417,14 +417,26 @@ export const ShopPage = () => {
       const response = await consumerApi.createOrder(payload);
 
       if (response.data.success) {
-        setPaymentSuccess(true);
-        message.success("Order placed successfully!");
-        fetchProducts();
-        setTimeout(() => {
-          clearCart();
-          setShowCheckoutModal(false);
-          setPaymentSuccess(false);
-        }, 2000);
+        // MoMo payments are PENDING until customer enters PIN on phone
+        const orderStatus = response.data.order?.status;
+        if (orderStatus === 'pending_payment' || orderStatus === 'pending') {
+          message.info('Payment request sent! Please ask the customer to approve the prompt on their phone. The order will be confirmed automatically once payment is completed.');
+          fetchProducts();
+          setTimeout(() => {
+            clearCart();
+            setShowCheckoutModal(false);
+            setPaymentSuccess(false);
+          }, 2000);
+        } else {
+          setPaymentSuccess(true);
+          message.success("Order placed successfully!");
+          fetchProducts();
+          setTimeout(() => {
+            clearCart();
+            setShowCheckoutModal(false);
+            setPaymentSuccess(false);
+          }, 2000);
+        }
       }
     } catch (error: unknown) {
       console.error("Payment failed:", error);

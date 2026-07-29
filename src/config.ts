@@ -13,7 +13,7 @@
 // ========================================
 // MAIN API URL - यहाँ change करें
 // ========================================
-export const API_URL = "https://bigcompanybackend-production-458c.up.railway.app";
+export const API_URL = "https://big-company-backend-production.up.railway.app";
 //export const API_URL = "http://localhost:9001";
 
 // ========================================

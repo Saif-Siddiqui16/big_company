@@ -354,19 +354,29 @@ const POSPage = () => {
       const response = await retailerApi.createSale(saleData);
 
       if (response.data?.success) {
-        message.success('Sale completed successfully!');
-        setLastSale({
-          ...response.data,
-          items: cart,
-          subtotal,
-          tax: taxAmount,
-          discount: discountAmount,
-          total,
-          method,
-          gasRewardWalletId: paymentDetails?.gasRewardWalletId || gasRewardWalletId,
-        });
+        const isMoMoPending = method === 'mobile_money' && response.data.status === 'pending_payment';
 
-        // Reset state
+        if (isMoMoPending) {
+          // MoMo: payment is waiting for customer to enter PIN on phone
+          message.info('Payment request sent to customer\'s phone. Sale will be confirmed once they approve the MoMo prompt.');
+        } else {
+          // Wallet / NFC: payment is complete immediately
+          message.success('Sale completed successfully!');
+          setLastSale({
+            ...response.data,
+            items: cart,
+            subtotal,
+            tax: taxAmount,
+            discount: discountAmount,
+            total,
+            method,
+            gasRewardWalletId: paymentDetails?.gasRewardWalletId || gasRewardWalletId,
+          });
+          // Show receipt only for completed payments
+          setReceiptModal(true);
+        }
+
+        // Reset state regardless of payment type (prevents double-submit)
         setPaymentModal(false);
         setCart([]);
         setDiscount(0);
@@ -376,9 +386,6 @@ const POSPage = () => {
         setCardPin('');
         setCardUid('');
         setGasRewardWalletId('');
-
-        // Show receipt
-        setReceiptModal(true);
 
         // Refresh stats and products
         loadDailyStats();
@@ -437,10 +444,6 @@ const POSPage = () => {
           phone: customerPhone,
           gasRewardWalletId: gasRewardWalletId || undefined,
         };
-        // Simulate mobile money request
-        message.loading('Sending payment request to customer...', 2);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        message.success(`Payment request sent to ${customerPhone}`);
         break;
 
       default:

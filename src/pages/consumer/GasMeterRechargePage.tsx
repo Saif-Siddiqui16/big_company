@@ -51,6 +51,7 @@ interface RechargeResult {
     token?: string;
     apiReference?: string;
     message?: string;
+    isPending?: boolean;
 }
 
 interface RechargeTransaction {
@@ -252,6 +253,24 @@ const GasMeterRechargePage: React.FC = () => {
             const response = await gasMeterRechargeApi.initiate(payload);
 
             if (response.data.success) {
+                if (response.data.status === 'PENDING_PAYMENT') {
+                    setResult({
+                        transactionId: response.data.transactionId,
+                        meterNumber: payload.meterNumber,
+                        meterType: 'TOKEN',
+                        amount: cost,
+                        units: volume,
+                        token: undefined,
+                        apiReference: response.data.apiReference,
+                        message: response.data.message || 'Payment initiated. Please approve the prompt on your phone to complete the recharge.',
+                        isPending: true
+                    });
+                    setCurrentStep(1);
+                    message.info('Payment initiated. Please check your phone for the mobile money prompt.');
+                    await loadHistory();
+                    return;
+                }
+
                 const data = response.data.data;
                 setResult({
                     transactionId: data.transactionId,
@@ -881,6 +900,31 @@ const GasMeterRechargePage: React.FC = () => {
                                         </Col>
                                     ))}
                                 </Row>
+
+                                {/* PENDING/MOBILE MONEY Display */}
+                                {result.isPending && (
+                                    <div
+                                        style={{
+                                            background: 'linear-gradient(135deg, #fffbe6, #ffe58f)',
+                                            border: '2px solid #d4b106',
+                                            borderRadius: 14,
+                                            padding: '20px 24px',
+                                            marginBottom: 20,
+                                            textAlign: 'center',
+                                        }}
+                                    >
+                                        <InfoCircleOutlined style={{ fontSize: 24, color: '#d4b106', marginBottom: 8 }} />
+                                        <div style={{ fontSize: 15, fontWeight: 700, color: '#b78103', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
+                                            Payment Pending Approval
+                                        </div>
+                                        <div style={{ fontSize: 13, color: '#595959', marginTop: 6, fontWeight: 500 }}>
+                                            {result.message}
+                                        </div>
+                                        <div style={{ fontSize: 12, color: '#888', marginTop: 10, fontStyle: 'italic', borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: 10 }}>
+                                            Note: Once the payment is authorized on your mobile phone, the recharge token will be automatically generated. You can copy the token from the History tab.
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* TOKEN Display */}
                                 {result.meterType === 'TOKEN' && result.token && (

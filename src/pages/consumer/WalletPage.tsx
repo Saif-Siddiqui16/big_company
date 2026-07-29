@@ -205,7 +205,12 @@ const ConsumerWalletPage: React.FC = () => {
               phone: values.phone,
           });
           if (response.data.success) {
-              message.success('Top-up successful');
+              // MoMo payments are pending until user enters PIN on phone
+              if (response.data.status === 'pending') {
+                  message.info('Payment initiated! Please approve the prompt on your phone. Your balance will update automatically once confirmed.');
+              } else {
+                  message.success('Top-up successful! Your balance has been updated.');
+              }
               setTopUpModalVisible(false);
               topUpForm.resetFields();
               loadData();

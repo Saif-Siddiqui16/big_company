@@ -20,6 +20,7 @@ import {
   Divider,
   Empty,
   Tooltip,
+  Radio,
 } from 'antd';
 import {
   ShoppingCartOutlined,
@@ -34,9 +35,11 @@ import {
   TruckOutlined,
   LockOutlined,
   LinkOutlined,
+  MobileOutlined,
 } from '@ant-design/icons';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
+import { useAuth } from '../../contexts/AuthContext';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -63,6 +66,7 @@ import { retailerApi } from '../../services/apiService';
 const AddStockPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const urlWholesalerId = searchParams.get('wholesalerId');
 
   const [loading, setLoading] = useState(false);
@@ -81,6 +85,14 @@ const AddStockPage: React.FC = () => {
   // NEW: Payment and Credit states
   const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'credit' | 'momo'>('wallet');
   const [creditInfo, setCreditInfo] = useState<{available: number, limit: number, used: number} | null>(null);
+  const [momoPhone, setMomoPhone] = useState('');
+  const [momoCarrier, setMomoCarrier] = useState<'mtn' | 'airtel'>('mtn');
+
+  useEffect(() => {
+    if (user?.phone) {
+      setMomoPhone(user.phone);
+    }
+  }, [user]);
 
   // Load wholesaler products and wallet balance
   useEffect(() => {
@@ -213,22 +225,38 @@ const AddStockPage: React.FC = () => {
       const response = await retailerApi.createOrder({
         items: orderItems,
         totalAmount: cartTotal,
-        paymentMethod: paymentMethod
+        paymentMethod: paymentMethod,
+        phone: paymentMethod === 'momo' ? momoPhone : undefined
       });
 
       const orderId = response.data.order.id;
+      const orderStatus = response.data.order?.status;
 
-      Modal.success({
-        title: 'Order Placed Successfully!',
-        content: (
-          <div>
-            <p>Your order has been sent to the wholesaler.</p>
-            <p><strong>Order ID:</strong></p>
-            <Typography.Paragraph copyable>{orderId}</Typography.Paragraph>
-            <p>Use this Order ID to add these items to your Inventory.</p>
-          </div>
-        ),
-      });
+      if (orderStatus === 'pending_payment') {
+        Modal.warning({
+          title: 'Payment Pending Confirmation',
+          content: (
+            <div>
+              <p>A Mobile Money payment request has been sent to <strong>{momoPhone}</strong>.</p>
+              <p>Please check your phone, enter your PIN to authorize the payment, then check your orders tab for confirmation.</p>
+              <p><strong>Order ID:</strong></p>
+              <Typography.Paragraph copyable>{orderId}</Typography.Paragraph>
+            </div>
+          ),
+        });
+      } else {
+        Modal.success({
+          title: 'Order Placed Successfully!',
+          content: (
+            <div>
+              <p>Your order has been sent to the wholesaler.</p>
+              <p><strong>Order ID:</strong></p>
+              <Typography.Paragraph copyable>{orderId}</Typography.Paragraph>
+              <p>Use this Order ID to add these items to your Inventory.</p>
+            </div>
+          ),
+        });
+      }
 
       setCart([]);
       setCheckoutModalVisible(false);
@@ -639,12 +667,36 @@ const AddStockPage: React.FC = () => {
             </>
           )}
           {paymentMethod === 'momo' && (
-            <Row justify="space-between">
-              <Text>Amount to Pay:</Text>
-              <Text strong style={{ color: '#1890ff' }}>
-                {cartTotal.toLocaleString()} RWF
-              </Text>
-            </Row>
+            <>
+              <Row justify="space-between" style={{ marginBottom: 12 }}>
+                <Text>Amount to Pay:</Text>
+                <Text strong style={{ color: '#1890ff' }}>
+                  {cartTotal.toLocaleString()} RWF
+                </Text>
+              </Row>
+              <div style={{ marginTop: 12 }}>
+                <Text strong>Mobile Provider:</Text>
+                <div style={{ marginTop: 8 }}>
+                  <Radio.Group value={momoCarrier} onChange={e => setMomoCarrier(e.target.value)}>
+                    <Space direction="vertical">
+                      <Radio value="mtn"><MobileOutlined /> MTN Mobile Money</Radio>
+                      <Radio value="airtel"><MobileOutlined /> Airtel Money</Radio>
+                    </Space>
+                  </Radio.Group>
+                </div>
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <Text strong>Mobile Number:</Text>
+                <Input
+                  placeholder="e.g. 0788123456"
+                  prefix={<MobileOutlined />}
+                  value={momoPhone}
+                  onChange={(e) => setMomoPhone(e.target.value)}
+                  style={{ width: '100%', marginTop: 8 }}
+                  maxLength={12}
+                />
+              </div>
+            </>
           )}
         </Space>
 
@@ -656,6 +708,7 @@ const AddStockPage: React.FC = () => {
             type="primary"
             loading={loading}
             onClick={confirmOrder}
+            disabled={paymentMethod === 'momo' && !momoPhone}
             icon={<CheckCircleOutlined />}
           >
             Confirm Order

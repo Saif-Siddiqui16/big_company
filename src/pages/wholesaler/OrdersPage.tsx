@@ -186,7 +186,7 @@ const OrdersPage = () => {
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
-    const interval = setInterval(() => fetchOrders(true), 30000);
+    const interval = setInterval(() => fetchOrders(true), 15000);
     return () => clearInterval(interval);
   }, [statusFilter, paymentFilter]);
 

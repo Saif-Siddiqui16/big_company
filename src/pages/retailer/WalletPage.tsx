@@ -252,7 +252,7 @@ export const WalletPage = () => {
       } else {
         fetchCreditData(true);
       }
-    }, 60000);
+    }, 15000);
     return () => clearInterval(interval);
   }, [activeTab]);
 

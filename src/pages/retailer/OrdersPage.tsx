@@ -60,7 +60,7 @@ interface Order {
   subtotal: number;
   discount: number;
   total: number;
-  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'ready' | 'completed' | 'delivered' | 'cancelled';
+  status: 'pending' | 'pending_payment' | 'confirmed' | 'processing' | 'shipped' | 'ready' | 'completed' | 'delivered' | 'cancelled';
   payment_method: 'dashboard_wallet' | 'credit_wallet' | 'mobile_money' | 'cash' | 'wallet' | 'nfc' | 'credit';
   payment_status: 'pending' | 'paid' | 'refunded';
   notes?: string;
@@ -94,6 +94,7 @@ interface OrderStats {
 }
 
 const statusColors: Record<string, string> = {
+  pending_payment: 'orange',
   pending: 'orange',
   confirmed: 'cyan',
   processing: 'cyan',
@@ -105,6 +106,7 @@ const statusColors: Record<string, string> = {
 };
 
 const statusLabels: Record<string, string> = {
+  pending_payment: 'PENDING PAYMENT',
   pending: 'PENDING',
   confirmed: 'PROCEED',
   processing: 'PROCEED',
@@ -168,7 +170,7 @@ export const OrdersPage = () => {
 
   useEffect(() => {
     loadOrders();
-    const interval = setInterval(() => loadOrders(true), 30000);
+    const interval = setInterval(() => loadOrders(true), 15000);
     return () => clearInterval(interval);
   }, [statusFilter, paymentFilter, pagination.current]);
 
@@ -225,7 +227,7 @@ export const OrdersPage = () => {
       }
 
       setStats({
-        pending: allOrders.filter((o: Order) => o.status === 'pending').length,
+        pending: allOrders.filter((o: Order) => o.status === 'pending' || o.status === 'pending_payment').length,
         processing: allOrders.filter((o: Order) => o.status === 'processing' || o.status === 'confirmed').length,
         shipped: allOrders.filter((o: Order) => o.status === 'shipped').length,
         ready: allOrders.filter((o: Order) => o.status === 'ready').length,

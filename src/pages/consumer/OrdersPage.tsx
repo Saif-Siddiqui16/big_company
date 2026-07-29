@@ -70,7 +70,7 @@ interface Shipper {
 interface Order {
   id: string;
   order_number: string;
-  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'rejected';
+  status: 'pending' | 'pending_payment' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'rejected';
   retailer: {
     id: string;
     name: string;
@@ -98,6 +98,7 @@ interface Order {
 }
 
 const statusColors: Record<string, string> = {
+  pending_payment: 'gold',
   pending: 'gold',
   confirmed: 'cyan',
   processing: 'cyan',
@@ -107,6 +108,7 @@ const statusColors: Record<string, string> = {
 };
 
 const statusLabels: Record<string, string> = {
+  pending_payment: 'PENDING PAYMENT',
   pending: 'PENDING',
   confirmed: 'PROCEED',
   processing: 'PROCEED',
@@ -142,10 +144,12 @@ export const OrdersPage: React.FC = () => {
 
   useEffect(() => {
     fetchOrders();
+    const interval = setInterval(() => fetchOrders(true), 15000);
+    return () => clearInterval(interval);
   }, []);
 
-  const fetchOrders = async () => {
-    setLoading(true);
+  const fetchOrders = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const response = await consumerApi.getOrders();
       // Filter out null/invalid orders and ensure all required fields exist
@@ -164,7 +168,7 @@ export const OrdersPage: React.FC = () => {
       message.error('Failed to load orders');
       setOrders([]);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -444,7 +448,7 @@ export const OrdersPage: React.FC = () => {
 
     switch (filter) {
       case 'active':
-        filtered = orders.filter(o => ['pending', 'confirmed', 'processing', 'shipped'].includes(o.status));
+        filtered = orders.filter(o => ['pending', 'pending_payment', 'confirmed', 'processing', 'shipped'].includes(o.status));
         break;
       case 'completed':
         filtered = orders.filter(o => o.status === 'delivered');
@@ -494,7 +498,7 @@ export const OrdersPage: React.FC = () => {
           <Col>
             <Button
               icon={<ReloadOutlined />}
-              onClick={fetchOrders}
+              onClick={() => fetchOrders()}
               style={{ borderRadius: 8 }}
             >
               Refresh
