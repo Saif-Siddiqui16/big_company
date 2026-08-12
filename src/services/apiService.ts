@@ -188,6 +188,7 @@ export const retailerApi = {
   cancelOrder: (id: string, reason: string) =>
     api.post(`/retailer/orders/${id}/cancel`, { reason }),
   fulfillOrder: (id: string) => api.post(`/retailer/orders/${id}/fulfill`),
+  configureOrder: (id: string, items: any[]) => api.post(`/retailer/orders/${id}/configure`, { items }),
 
   // POS
   getPOSProducts: (params?: any) =>

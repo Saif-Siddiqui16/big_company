@@ -60,7 +60,7 @@ interface Order {
   subtotal: number;
   discount: number;
   total: number;
-  status: 'pending' | 'pending_payment' | 'confirmed' | 'processing' | 'shipped' | 'ready' | 'completed' | 'delivered' | 'cancelled';
+  status: 'draft' | 'awaiting_payment' | 'pending' | 'pending_payment' | 'confirmed' | 'processing' | 'shipped' | 'ready' | 'completed' | 'delivered' | 'cancelled';
   payment_method: 'dashboard_wallet' | 'credit_wallet' | 'mobile_money' | 'cash' | 'wallet' | 'nfc' | 'credit';
   payment_status: 'pending' | 'paid' | 'refunded';
   notes?: string;
@@ -94,6 +94,8 @@ interface OrderStats {
 }
 
 const statusColors: Record<string, string> = {
+  draft: 'default',
+  awaiting_payment: 'warning',
   pending_payment: 'orange',
   pending: 'orange',
   confirmed: 'cyan',
@@ -106,6 +108,8 @@ const statusColors: Record<string, string> = {
 };
 
 const statusLabels: Record<string, string> = {
+  draft: 'USSD CALLBACK',
+  awaiting_payment: 'AWAITING PAYMENT',
   pending_payment: 'PENDING PAYMENT',
   pending: 'PENDING',
   confirmed: 'PROCEED',
@@ -167,6 +171,72 @@ export const OrdersPage = () => {
     order: null,
   });
   const [viewLoading, setViewLoading] = useState(false);
+
+  // Configure Modal state
+  const [configureModalVisible, setConfigureModalVisible] = useState(false);
+  const [selectedConfigureOrder, setSelectedConfigureOrder] = useState<Order | null>(null);
+  const [inventoryProducts, setInventoryProducts] = useState<any[]>([]);
+  const [configureLoading, setConfigureLoading] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<Array<{ productId: string; quantity: number }>>([]);
+
+  const handleOpenConfigureModal = async (order: Order) => {
+    setSelectedConfigureOrder(order);
+    setSelectedItems([]);
+    setConfigureModalVisible(true);
+    setConfigureLoading(true);
+    try {
+      const response = await retailerApi.getInventory();
+      const products = response.data.products || response.data || [];
+      setInventoryProducts(products);
+    } catch (err) {
+      console.error('Failed to load inventory:', err);
+      message.error('Failed to load inventory products');
+    } finally {
+      setConfigureLoading(false);
+    }
+  };
+
+  const handleAddItemToConfigure = (productId: any) => {
+    setSelectedItems((prev) => {
+      const exists = prev.find((item) => String(item.productId) === String(productId));
+      if (exists) {
+        return prev.map((item) =>
+          String(item.productId) === String(productId) ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      }
+      return [...prev, { productId: String(productId), quantity: 1 }];
+    });
+  };
+
+  const handleUpdateItemQuantity = (productId: any, quantity: number) => {
+    if (quantity <= 0) {
+      setSelectedItems((prev) => prev.filter((item) => String(item.productId) !== String(productId)));
+      return;
+    }
+    setSelectedItems((prev) =>
+      prev.map((item) => (String(item.productId) === String(productId) ? { ...item, quantity } : item))
+    );
+  };
+
+  const handleSubmitConfiguration = async () => {
+    if (!selectedConfigureOrder) return;
+    if (selectedItems.length === 0) {
+      message.error('Please add at least one product to the order.');
+      return;
+    }
+    setConfigureLoading(true);
+    try {
+      await retailerApi.configureOrder(selectedConfigureOrder.id, selectedItems);
+      message.success('Order configured successfully and requested payment');
+      setConfigureModalVisible(false);
+      loadOrders();
+    } catch (err) {
+      console.error('Failed to configure order:', err);
+      message.error('Failed to configure order');
+    } finally {
+      setConfigureLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadOrders();
@@ -432,6 +502,16 @@ export const OrdersPage = () => {
             icon={<EyeOutlined />}
             onClick={() => loadOrderDetail(record.id)}
           />
+          {record.status === 'draft' && (
+            <Button
+              type="primary"
+              size="small"
+              icon={<ShoppingCartOutlined />}
+              onClick={() => handleOpenConfigureModal(record)}
+            >
+              Configure Order
+            </Button>
+          )}
           {record.status === 'pending' && (
             <>
               <Button
@@ -606,6 +686,8 @@ export const OrdersPage = () => {
               allowClear
             >
               <Select.Option value="">All Status</Select.Option>
+              <Select.Option value="draft">USSD Callbacks</Select.Option>
+              <Select.Option value="awaiting_payment">Awaiting Payment</Select.Option>
               <Select.Option value="pending">Pending</Select.Option>
               <Select.Option value="confirmed">Confirmed</Select.Option>
               <Select.Option value="processing">Processing</Select.Option>
@@ -1019,6 +1101,120 @@ export const OrdersPage = () => {
         ) : (
           <Empty description="Order not found" />
         )}
+      </Modal>
+
+      {/* Configure Order Modal */}
+      <Modal
+        title="Configure USSD Order Request"
+        open={configureModalVisible}
+        onCancel={() => setConfigureModalVisible(false)}
+        okText="Save & Request Payment"
+        confirmLoading={configureLoading}
+        onOk={handleSubmitConfiguration}
+        width={700}
+      >
+        <Spin spinning={configureLoading}>
+          <div style={{ marginBottom: 16 }}>
+            <Text strong>Select Product to Add:</Text>
+            <Select
+              showSearch
+              placeholder="Search product..."
+              style={{ width: '100%', marginTop: 8 }}
+              optionFilterProp="children"
+              onChange={(value) => handleAddItemToConfigure(value)}
+              value={null}
+            >
+              {inventoryProducts.map((prod) => (
+                <Select.Option key={prod.id} value={prod.id}>
+                  {prod.name} ({prod.price?.toLocaleString()} RWF) - Stock: {prod.stock}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+
+          <Table
+            dataSource={selectedItems}
+            pagination={false}
+            rowKey="productId"
+            size="small"
+            columns={[
+              {
+                title: 'Product',
+                key: 'product',
+                render: (_, record) => {
+                  const product = inventoryProducts.find((p) => String(p.id) === String(record.productId));
+                  return product?.name || 'Unknown Product';
+                },
+              },
+              {
+                title: 'Price',
+                key: 'price',
+                align: 'right',
+                render: (_, record) => {
+                  const product = inventoryProducts.find((p) => String(p.id) === String(record.productId));
+                  return `${product?.price?.toLocaleString() || 0} RWF`;
+                },
+              },
+              {
+                title: 'Quantity',
+                key: 'quantity',
+                align: 'center',
+                render: (_, record) => (
+                  <Input
+                    type="number"
+                    min={1}
+                    value={record.quantity}
+                    onChange={(e) => handleUpdateItemQuantity(record.productId, parseInt(e.target.value) || 0)}
+                    style={{ width: 80, textAlign: 'center' }}
+                  />
+                ),
+              },
+              {
+                title: 'Subtotal',
+                key: 'subtotal',
+                align: 'right',
+                render: (_, record) => {
+                  const product = inventoryProducts.find((p) => String(p.id) === String(record.productId));
+                  const subtotal = (product?.price || 0) * record.quantity;
+                  return <Text strong>{subtotal.toLocaleString()} RWF</Text>;
+                },
+              },
+              {
+                title: 'Action',
+                key: 'action',
+                align: 'center',
+                render: (_, record) => (
+                  <Button
+                    type="text"
+                    danger
+                    icon={<CloseOutlined />}
+                    onClick={() => handleUpdateItemQuantity(record.productId, 0)}
+                  />
+                ),
+              },
+            ]}
+            summary={() => {
+              let total = 0;
+              selectedItems.forEach((item) => {
+                const product = inventoryProducts.find((p) => String(p.id) === String(item.productId));
+                total += (product?.price || 0) * item.quantity;
+              });
+              return (
+                <Table.Summary.Row>
+                  <Table.Summary.Cell index={0} colSpan={3}>
+                    <Text strong>Total Amount</Text>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={1} align="right">
+                    <Title level={5} style={{ margin: 0, color: '#0ea5e9' }}>
+                      {total.toLocaleString()} RWF
+                    </Title>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={2} />
+                </Table.Summary.Row>
+              );
+            }}
+          />
+        </Spin>
       </Modal>
 
       <style>{`
