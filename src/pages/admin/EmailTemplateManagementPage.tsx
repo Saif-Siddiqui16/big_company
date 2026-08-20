@@ -401,6 +401,7 @@ const EmailTemplateManagementPage: React.FC = () => {
               <Option value="password reset">Password Reset</Option>
               <Option value="order confirmation">Order Confirmation</Option>
               <Option value="gas top-up">Gas Top-up</Option>
+              <Option value="wallet top-up">Wallet Top-up</Option>
               <Option value="loan request">Loan Request</Option>
               <Option value="loan repayment">Loan Repayment</Option>
               <Option value="account activation">Account Activation</Option>

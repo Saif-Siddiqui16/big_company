@@ -40,6 +40,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 import { adminApi } from '../../services/apiService';
+import { getDistrictsByProvince, getSectorsByDistrict } from 'rwanda-geo-structure';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -52,6 +53,10 @@ interface RetailerAccount {
   business_name: string;
   phone: string;
   address?: string;
+  province?: string;
+  district?: string;
+  sector?: string;
+  cell?: string;
   credit_limit: number;
   orders: number;
   revenue: number;
@@ -93,6 +98,8 @@ const AccountManagementPage: React.FC = () => {
   const [wholesalers, setWholesalers] = useState<WholesalerAccount[]>([]);
   const [customers, setCustomers] = useState<CustomerAccount[]>([]);
   const [createRetailerModalVisible, setCreateRetailerModalVisible] = useState(false);
+  const [selectedProvince, setSelectedProvince] = useState<string | undefined>(undefined);
+  const [selectedDistrict, setSelectedDistrict] = useState<string | undefined>(undefined);
   const [createWholesalerModalVisible, setCreateWholesalerModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('customers');
   const [searchText, setSearchText] = useState('');
@@ -122,6 +129,10 @@ const AccountManagementPage: React.FC = () => {
           email: r.user?.email,
           phone: r.user?.phone,
           address: r.address,
+          province: r.province,
+          district: r.district,
+          sector: r.sector,
+          cell: r.cell,
           credit_limit: r.creditLimit,
           orders: r.orders || 0,
           revenue: r.revenue || 0,
@@ -222,6 +233,8 @@ const AccountManagementPage: React.FC = () => {
   const handleEditRetailer = (record: RetailerAccount) => {
     setEditingId(record.id);
     retailerForm.setFieldsValue(record);
+    setSelectedProvince(record.province);
+    setSelectedDistrict(record.district);
     setCreateRetailerModalVisible(true);
   };
 
@@ -834,6 +847,83 @@ const AccountManagementPage: React.FC = () => {
           >
             <TextArea rows={3} placeholder="Street, District, City" className="rounded-lg" />
           </Form.Item>
+
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item
+                name="province"
+                label={<span className="font-semibold">Province</span>}
+                rules={[{ required: true, message: 'Please select province' }]}
+              >
+                <Select
+                  placeholder="Select Province"
+                  onChange={(val) => {
+                    setSelectedProvince(val);
+                    setSelectedDistrict(undefined);
+                    retailerForm.setFieldsValue({ district: undefined, sector: undefined });
+                  }}
+                  allowClear
+                >
+                  <Option value="Kigali">Kigali City</Option>
+                  <Option value="North">Northern Province</Option>
+                  <Option value="South">Southern Province</Option>
+                  <Option value="East">Eastern Province</Option>
+                  <Option value="West">Western Province</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="district"
+                label={<span className="font-semibold">District</span>}
+                rules={[{ required: true, message: 'Please select district' }]}
+              >
+                <Select
+                  placeholder="Select District"
+                  disabled={!selectedProvince}
+                  onChange={(val) => {
+                    setSelectedDistrict(val);
+                    retailerForm.setFieldsValue({ sector: undefined });
+                  }}
+                  allowClear
+                  showSearch
+                >
+                  {selectedProvince && getDistrictsByProvince(selectedProvince).map((d) => (
+                    <Option key={d} value={d}>{d}</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item
+                name="sector"
+                label={<span className="font-semibold">Sector</span>}
+                rules={[{ required: true, message: 'Please select sector' }]}
+              >
+                <Select
+                  placeholder="Select Sector"
+                  disabled={!selectedDistrict}
+                  allowClear
+                  showSearch
+                >
+                  {selectedProvince && selectedDistrict && getSectorsByDistrict(selectedProvince, selectedDistrict).map((s) => (
+                    <Option key={s} value={s}>{s}</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="cell"
+                label={<span className="font-semibold">Cell (Optional)</span>}
+              >
+                <Input placeholder="e.g. cell name" className="py-2 rounded-lg" />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Form.Item
             name="credit_limit"
