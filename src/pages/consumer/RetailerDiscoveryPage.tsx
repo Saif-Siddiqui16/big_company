@@ -31,6 +31,7 @@ import {
   ShoppingCartOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { getDistrictsByProvince, getSectorsByDistrict } from 'rwanda-geo-structure';
 import api, { consumerApi } from '../../services/apiService';
 
 const { Title, Text } = Typography;
@@ -486,26 +487,34 @@ const RetailerDiscoveryPage: React.FC = () => {
               }}
               value={district}
               allowClear
+              showSearch
+              filterOption={(input, option) =>
+                (option?.value ?? '').toString().toLowerCase().includes(input.toLowerCase())
+              }
             >
-              {province === 'Kigali' && (
-                <>
-                  <Select.Option value="Gasabo">Gasabo</Select.Option>
-                  <Select.Option value="Kicukiro">Kicukiro</Select.Option>
-                  <Select.Option value="Nyarugenge">Nyarugenge</Select.Option>
-                </>
-              )}
-              {province && province !== 'Kigali' && (
-                <Select.Option value="Demo District">Demo District</Select.Option>
-              )}
+              {province && getDistrictsByProvince(province).map((d) => (
+                <Select.Option key={d} value={d}>{d}</Select.Option>
+              ))}
             </Select>
 
-            <Input
-              placeholder="Enter Sector"
+            <Select
+              placeholder="Select Sector"
               style={{ width: 200 }}
               disabled={!district}
+              onChange={(value) => {
+                setSector(value);
+              }}
               value={sector}
-              onChange={(e) => setSector(e.target.value)}
-            />
+              allowClear
+              showSearch
+              filterOption={(input, option) =>
+                (option?.value ?? '').toString().toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {province && district && getSectorsByDistrict(province, district).map((s) => (
+                <Select.Option key={s} value={s}>{s}</Select.Option>
+              ))}
+            </Select>
 
             <Button
               type="primary"

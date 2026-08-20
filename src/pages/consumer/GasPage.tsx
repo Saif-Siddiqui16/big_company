@@ -241,18 +241,7 @@ export const GasPage: React.FC = () => {
     }
   };
 
-  // Low Balance Notification Logic
-  useEffect(() => {
-    const lowBalanceMeters = meters.filter(m => m.current_units < 2);
-    if (lowBalanceMeters.length > 0) {
-      lowBalanceMeters.forEach(meter => {
-        message.warning({
-          content: `Low Gas Balance: Meter ${meter.meter_number} has only ${meter.current_units.toFixed(2)} units left. Please recharge soon!`,
-          duration: 5,
-        });
-      });
-    }
-  }, [meters.length]); // Run when meters are loaded
+
 
   const handleAddMeter = async (values: any) => {
     setProcessing(true);

@@ -314,7 +314,9 @@ const NFCCardManagementPage: React.FC = () => {
       title: 'Total Dash Balance',
       key: 'dash_balance',
       render: (_, record) => {
-        const total = record.cards.reduce((sum: number, c: any) => sum + (c.dashboardBalance || 0), 0);
+        const total = record.key === 'unassigned'
+          ? record.cards.reduce((sum: number, c: any) => sum + (c.dashboardBalance || 0), 0)
+          : (record.cards[0]?.dashboardBalance || 0);
         return <span className="font-semibold text-gray-800">{total.toLocaleString()} RWF</span>;
       },
     },
@@ -322,7 +324,9 @@ const NFCCardManagementPage: React.FC = () => {
       title: 'Total Credit Balance',
       key: 'credit_balance',
       render: (_, record) => {
-        const total = record.cards.reduce((sum: number, c: any) => sum + (c.creditBalance || 0), 0);
+        const total = record.key === 'unassigned'
+          ? record.cards.reduce((sum: number, c: any) => sum + (c.creditBalance || 0), 0)
+          : (record.cards[0]?.creditBalance || 0);
         return <span className="font-semibold text-blue-600">{total.toLocaleString()} RWF</span>;
       },
     }
