@@ -369,7 +369,8 @@ const NFCCardManagementPage: React.FC = () => {
     { title: 'Active', value: cards.filter(c => c.status === 'active' || c.status === 'available').length, icon: <CheckCircleOutlined className="text-green-500" />, border: '#52c41a' },
     { title: 'Unassigned', value: cards.filter(c => !c.user_id && !c.cardholderName).length, icon: <LinkOutlined className="text-orange-500" />, border: '#faad14' },
     { title: 'Blocked', value: cards.filter(c => c.status === 'blocked').length, icon: <StopOutlined className="text-red-500" />, border: '#ff4d4f' },
-    { title: 'Total Balance (All Cards)', value: `${(totalDashBalance + totalCreditBalance).toLocaleString()} RWF`, icon: <DollarCircleOutlined className="text-purple-500" />, border: '#722ed1' },
+    { title: 'Total Dashboard Balance', value: `${totalDashBalance.toLocaleString()} RWF`, icon: <DollarCircleOutlined className="text-purple-500" />, border: '#722ed1' },
+    { title: 'Total Credit Balance', value: `${totalCreditBalance.toLocaleString()} RWF`, icon: <DollarCircleOutlined className="text-cyan-500" />, border: '#13c2c2' },
   ];
 
   return (
