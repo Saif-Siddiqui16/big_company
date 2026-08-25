@@ -417,12 +417,7 @@ const GasMeterRechargePage: React.FC = () => {
             dataIndex: 'token_value',
             key: 'token_value',
             render: (token: string | null, rec: RechargeTransaction) => {
-                // Only show Auto-credited for genuine PIPING (auto-push) meters if no token is available
-                if (rec.meter_type === 'PIPING' && !token) {
-                    return <Tag color="green">Auto-credited</Tag>;
-                }
-
-                // TOKEN meter: if token not yet available, show pending state
+                // if token not yet available, show pending state
                 if (!token) {
                     if (rec.status === 'PENDING' || rec.status === 'PENDING_PAYMENT') {
                         return <Tag color="orange">Awaiting Token</Tag>;

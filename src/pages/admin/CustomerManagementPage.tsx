@@ -678,9 +678,17 @@ const CustomerManagementPage: React.FC = () => {
                 })
               ) : (
                 <Col span={24}>
-                  <Text type="secondary" className="text-xs">No wallets found</Text>
+                  <Text type="secondary" className="text-xs">No regular wallets found</Text>
                 </Col>
               )}
+
+              {/* Explicitly show Gas Rewards Balance from the root object */}
+              <Col xs={24} sm={12}>
+                <Card size="small" className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+                  <Text type="secondary" className="text-xs">Gas Reward Wallet</Text><br/>
+                  <Text strong className="text-lg text-purple-700">{selectedCustomer.gasBalance || '0.00 M³'}</Text>
+                </Card>
+              </Col>
 
               {/* NFC Cards */}
               <Col span={24}>
