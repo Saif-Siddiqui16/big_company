@@ -345,12 +345,32 @@ const NFCCardManagementPage: React.FC = () => {
     );
   };
 
+  // Deduplicate by consumerId so customers with multiple cards aren't counted multiple times
+  const seenConsumerIds = new Set<string>();
+  let totalDashBalance = 0;
+  let totalCreditBalance = 0;
+  cards.forEach(c => {
+    const consumerId = c.consumerProfile?.id ? String(c.consumerProfile.id) : null;
+    if (consumerId) {
+      if (!seenConsumerIds.has(consumerId)) {
+        seenConsumerIds.add(consumerId);
+        totalDashBalance += c.dashboardBalance || 0;
+        totalCreditBalance += c.creditBalance || 0;
+      }
+    } else {
+      // Unassigned cards have no shared consumer wallet — sum individually
+      totalDashBalance += c.dashboardBalance || 0;
+      totalCreditBalance += c.creditBalance || 0;
+    }
+  });
+
   const stats = [
     { title: 'Total Cards', value: cards.length, icon: <CreditCardOutlined />, border: '#1890ff' },
     { title: 'Active', value: cards.filter(c => c.status === 'active' || c.status === 'available').length, icon: <CheckCircleOutlined className="text-green-500" />, border: '#52c41a' },
     { title: 'Unassigned', value: cards.filter(c => !c.user_id && !c.cardholderName).length, icon: <LinkOutlined className="text-orange-500" />, border: '#faad14' },
     { title: 'Blocked', value: cards.filter(c => c.status === 'blocked').length, icon: <StopOutlined className="text-red-500" />, border: '#ff4d4f' },
-    { title: 'Total Balance (All Cards)', value: `${cards.reduce((acc, c) => acc + (c.dashboardBalance || 0), 0).toLocaleString()} RWF`, icon: <DollarCircleOutlined className="text-purple-500" />, border: '#722ed1' },
+    { title: 'Total Dashboard Balance', value: `${totalDashBalance.toLocaleString()} RWF`, icon: <DollarCircleOutlined className="text-purple-500" />, border: '#722ed1' },
+    { title: 'Total Credit Balance', value: `${totalCreditBalance.toLocaleString()} RWF`, icon: <DollarCircleOutlined className="text-cyan-500" />, border: '#13c2c2' },
   ];
 
   return (

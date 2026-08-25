@@ -417,8 +417,25 @@ const GasMeterRechargePage: React.FC = () => {
             dataIndex: 'token_value',
             key: 'token_value',
             render: (token: string | null, rec: RechargeTransaction) => {
-                if (rec.meter_type === 'PIPING' || !token) {
+                // Only show Auto-credited for genuine PIPING (auto-push) meters if no token is available
+                if (rec.meter_type === 'PIPING' && !token) {
                     return <Tag color="green">Auto-credited</Tag>;
+                }
+
+                // TOKEN meter: if token not yet available, show pending state
+                if (!token) {
+                    if (rec.status === 'PENDING' || rec.status === 'PENDING_PAYMENT') {
+                        return <Tag color="orange">Awaiting Token</Tag>;
+                    }
+                    if (rec.status === 'FAILED') {
+                        return <Tag color="red">Failed</Tag>;
+                    }
+                    // Heuristic: Check if this was a GPRS meter (remote-pushed, no token returned)
+                    const meterInfo = registeredMeters.find(m => m.meter_number === rec.meter_number);
+                    if (meterInfo?.isGprs) {
+                        return <Tag color="cyan">Remote-Pushed</Tag>;
+                    }
+                    return <Tag color="default">No Token</Tag>;
                 }
 
                 // Heuristic: Check if this was a GPRS meter from local state
