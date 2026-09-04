@@ -78,6 +78,7 @@ const CustomerManagementPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [gasStats, setGasStats] = useState({ totalPurchases: 0, totalAmount: 0, totalUnits: 0 });
   const [globalRevenue, setGlobalRevenue] = useState(0);
+  const [globalOrders, setGlobalOrders] = useState(0);
 
   useEffect(() => {
     loadCustomers();
@@ -93,6 +94,7 @@ const CustomerManagementPage: React.FC = () => {
       if (customersRes.data?.customers) {
         setCustomers(customersRes.data.customers);
         setGlobalRevenue(customersRes.data.totalPlatformRevenue || 0);
+        setGlobalOrders(customersRes.data.totalPlatformOrders || 0);
       }
       if (dashboardRes.data?.dashboard?.gas) {
         setGasStats(dashboardRes.data.dashboard.gas);
@@ -296,7 +298,7 @@ const CustomerManagementPage: React.FC = () => {
     },
   ];
 
-  const totalOrders = customers.reduce((sum, c) => sum + (c.orderCount || 0), 0);
+  const totalOrders = globalOrders; // Use global orders from backend to include walk-ins
   const totalRevenue = globalRevenue; // Use global revenue from backend to include walk-ins and match retailer dashboard
 
   const stats = [
