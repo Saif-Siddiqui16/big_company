@@ -21,6 +21,7 @@ import {
   Descriptions,
   Timeline,
   Tabs,
+  Pagination,
 } from 'antd';
 import {
   ShoppingOutlined,
@@ -141,6 +142,8 @@ export const OrdersPage: React.FC = () => {
   const [cancelForm] = Form.useForm();
   const [cancelling, setCancelling] = useState(false);
   const [filter, setFilter] = useState<OrderFilter>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     fetchOrders();
@@ -464,6 +467,7 @@ export const OrdersPage: React.FC = () => {
   };
 
   const filteredOrders = getFilteredOrders();
+  const paginatedOrders = filteredOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   if (loading) {
     return (
@@ -510,7 +514,10 @@ export const OrdersPage: React.FC = () => {
       {/* Filter Tabs */}
       <Tabs
         activeKey={filter}
-        onChange={(key) => setFilter(key as OrderFilter)}
+        onChange={(key) => {
+          setFilter(key as OrderFilter);
+          setCurrentPage(1);
+        }}
         style={{ marginBottom: 16 }}
         items={[
           {
@@ -545,7 +552,7 @@ export const OrdersPage: React.FC = () => {
         </Empty>
       ) : (
         <Space direction="vertical" style={{ width: '100%' }} size={16}>
-          {filteredOrders.filter(order => order && order.status).map((order, index) => (
+          {paginatedOrders.filter(order => order && order.status).map((order, index) => (
             <Card
               key={`${order.id}-${index}`}
               hoverable
@@ -657,6 +664,17 @@ export const OrdersPage: React.FC = () => {
               )}
             </Card>
           ))}
+          {filteredOrders.length > pageSize && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24, marginBottom: 24 }}>
+              <Pagination
+                current={currentPage}
+                pageSize={pageSize}
+                total={filteredOrders.length}
+                onChange={(page) => setCurrentPage(page)}
+                showSizeChanger={false}
+              />
+            </div>
+          )}
         </Space>
       )}
 
