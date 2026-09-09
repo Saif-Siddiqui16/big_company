@@ -16,6 +16,7 @@ import {
   Alert,
   InputNumber,
   Tooltip,
+  Popconfirm,
 } from 'antd';
 import {
   PlusOutlined,
@@ -36,6 +37,8 @@ import {
   MailOutlined,
   FileTextOutlined,
   EyeOutlined,
+  DisconnectOutlined,
+  KeyOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { adminApi } from '../../services/apiService';
@@ -47,6 +50,7 @@ const { TextArea } = Input;
 interface NFCCard {
   id: string;
   uid: string;
+  cardNumber?: string;
   cardType?: string;
   cardholderName?: string;
   nationalId?: string;
@@ -75,6 +79,8 @@ const NFCCardManagementPage: React.FC = () => {
   const [cards, setCards] = useState<NFCCard[]>([]);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+  const [pinModalVisible, setPinModalVisible] = useState(false);
+  const [linkModalVisible, setLinkModalVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState<NFCCard | null>(null);
   const [cardTransactions, setCardTransactions] = useState<any[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
@@ -83,6 +89,8 @@ const NFCCardManagementPage: React.FC = () => {
   const [customers, setCustomers] = useState<any[]>([]);
 
   const [form] = Form.useForm();
+  const [pinForm] = Form.useForm();
+  const [linkForm] = Form.useForm();
 
   useEffect(() => {
     fetchCards();
@@ -152,11 +160,34 @@ const NFCCardManagementPage: React.FC = () => {
     }
   };
 
-  const generateUid = () => {
-    const year = new Date().getFullYear();
+  const handleChangePin = async (values: any) => {
+    if (!selectedCard) return;
+    try {
+      await adminApi.changeNFCPin(selectedCard.id, values.new_pin);
+      message.success('PIN changed successfully');
+      setPinModalVisible(false);
+      pinForm.resetFields();
+    } catch (err: any) {
+      message.error(err.response?.data?.error || 'Failed to change PIN');
+    }
+  };
+
+  const handleLinkCard = async (values: any) => {
+    if (!selectedCard) return;
+    try {
+      await adminApi.linkNFCCard(selectedCard.id, values.userId);
+      message.success('Card linked to customer successfully');
+      setLinkModalVisible(false);
+      linkForm.resetFields();
+      fetchCards();
+    } catch (err: any) {
+      message.error(err.response?.data?.error || 'Failed to link card');
+    }
+  };
+
+  const generateCardNumber = () => {
     const random = Math.floor(100000 + Math.random() * 900000); // 6 digit random
-    const uid = `NFC-${year}-${random}`;
-    form.setFieldsValue({ uid });
+    form.setFieldsValue({ cardNumber: random.toString() });
   };
 
   const handleCardAction = async (cardId: string, action: 'activate' | 'block' | 'unlink') => {
@@ -177,10 +208,16 @@ const NFCCardManagementPage: React.FC = () => {
 
   const columns: ColumnsType<NFCCard> = [
     {
-      title: 'Card Number',
+      title: 'Physical UID',
       dataIndex: 'uid',
       key: 'uid',
       render: (text) => <span className="font-medium text-gray-700">{text}</span>,
+    },
+    {
+      title: 'Card Number',
+      dataIndex: 'cardNumber',
+      key: 'cardNumber',
+      render: (text) => <span className="font-medium text-gray-700">{text || '-'}</span>,
     },
     {
       title: 'Balance Info',
@@ -245,6 +282,26 @@ const NFCCardManagementPage: React.FC = () => {
               <Button type="text" size="small" danger icon={<BlockOutlined />} onClick={() => handleCardAction(record.id, 'block')} />
             </Tooltip>
           )}
+          {(!record.user_id && !record.cardholderName) ? (
+            <Tooltip title="Link to Customer">
+              <Button type="text" size="small" icon={<LinkOutlined className="text-green-500" />} onClick={() => {
+                setSelectedCard(record);
+                setLinkModalVisible(true);
+              }} />
+            </Tooltip>
+          ) : (
+            <Tooltip title="Unlink Customer">
+              <Popconfirm title="Unlink this card?" onConfirm={() => handleCardAction(record.id, 'unlink')}>
+                <Button type="text" size="small" icon={<DisconnectOutlined className="text-orange-500" />} />
+              </Popconfirm>
+            </Tooltip>
+          )}
+          <Tooltip title="Change PIN">
+            <Button type="text" size="small" icon={<KeyOutlined className="text-blue-500" />} onClick={() => {
+              setSelectedCard(record);
+              setPinModalVisible(true);
+            }} />
+          </Tooltip>
         </Space>
       ),
     },
@@ -483,6 +540,93 @@ const NFCCardManagementPage: React.FC = () => {
         </Card>
       </div>
 
+      {/* Link Card Modal */}
+      <Modal
+        title={<span className="text-lg font-bold flex items-center gap-2"><LinkOutlined className="text-green-500" /> Assign Card to Customer</span>}
+        open={linkModalVisible}
+        onCancel={() => {
+          setLinkModalVisible(false);
+          linkForm.resetFields();
+        }}
+        footer={null}
+        width={400}
+        centered
+      >
+        <Form
+          form={linkForm}
+          layout="vertical"
+          onFinish={handleLinkCard}
+          className="mt-4"
+        >
+          <div className="bg-green-50 p-3 rounded-lg mb-4 flex items-start gap-3 border border-green-100">
+            <CreditCardOutlined className="text-green-500 mt-1" />
+            <div>
+              <Text className="text-green-700 text-xs font-semibold block uppercase">Target Card</Text>
+              <Text className="text-green-900 font-medium block">{selectedCard?.cardNumber || selectedCard?.uid}</Text>
+            </div>
+          </div>
+          <Form.Item
+            name="userId"
+            label="Select Customer"
+            rules={[{ required: true, message: 'Please select a customer' }]}
+          >
+            <Select
+              showSearch
+              placeholder="Search and select a customer"
+              optionFilterProp="children"
+              size="large"
+            >
+              {customers.map(c => (
+                <Option key={c.id} value={c.user?.id || c.id}>{c.name || c.user?.name}</Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item className="mb-0 text-right">
+            <Button onClick={() => setLinkModalVisible(false)} className="mr-2">Cancel</Button>
+            <Button type="primary" htmlType="submit">Assign Card</Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Change PIN Modal */}
+      <Modal
+        title={<span className="text-lg font-bold flex items-center gap-2"><KeyOutlined className="text-blue-500" /> Change Card PIN</span>}
+        open={pinModalVisible}
+        onCancel={() => {
+          setPinModalVisible(false);
+          pinForm.resetFields();
+        }}
+        footer={null}
+        width={400}
+        centered
+      >
+        <Form
+          form={pinForm}
+          layout="vertical"
+          onFinish={handleChangePin}
+          className="mt-4"
+        >
+          <div className="bg-blue-50 p-3 rounded-lg mb-4 flex items-start gap-3 border border-blue-100">
+            <CreditCardOutlined className="text-blue-500 mt-1" />
+            <div>
+              <Text className="text-blue-700 text-xs font-semibold block uppercase">Target Card</Text>
+              <Text className="text-blue-900 font-medium block">{selectedCard?.cardNumber || selectedCard?.uid}</Text>
+            </div>
+          </div>
+          <Form.Item
+            name="new_pin"
+            label="New PIN"
+            rules={[{ required: true, message: 'Please enter a new PIN' }, { len: 4, message: 'PIN must be exactly 4 digits' }]}
+          >
+            <Input.Password size="large" placeholder="Enter 4-digit PIN" maxLength={4} />
+          </Form.Item>
+          <Form.Item className="mb-0 text-right">
+            <Button onClick={() => setPinModalVisible(false)} className="mr-2">Cancel</Button>
+            <Button type="primary" htmlType="submit">Change PIN</Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+
       {/* Register Modal - Expanded Fields */}
       <Modal
         title={<span className="text-lg font-bold flex items-center gap-2"><CreditCardOutlined className="text-[#1890ff]" /> Register New NFC Card</span>}
@@ -504,17 +648,30 @@ const NFCCardManagementPage: React.FC = () => {
             <Col span={12}>
               <Form.Item
                 name="uid"
-                label={<span className="text-xs font-semibold uppercase text-gray-500 flex gap-1">Card Number / UID <span className="text-red-500">*</span></span>}
-                rules={[{ required: true, message: 'Card number is required' }]}
+                label={<span className="text-xs font-semibold uppercase text-gray-500 flex gap-1">Physical Card UID <span className="text-red-500">*</span></span>}
+                rules={[{ required: true, message: 'Card UID is required' }]}
               >
                 <Input 
                   size="large" 
                   prefix={<CreditCardOutlined className="text-gray-300" />} 
-                  placeholder="e.g., NFC-007-2024-XXXX" 
+                  placeholder="Scan or type factory UID" 
+                  className="rounded-lg"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="cardNumber"
+                label={<span className="text-xs font-semibold uppercase text-gray-500 flex gap-1">6-Digit Card Number <span className="text-red-500">*</span></span>}
+                rules={[{ required: true, message: 'Card number is required' }, { pattern: /^\d{6}$/, message: 'Must be exactly 6 digits' }]}
+              >
+                <Input 
+                  size="large" 
+                  placeholder="e.g., 123456" 
                   className="rounded-lg"
                   addonAfter={
                     <Tooltip title="Auto Generate Card Number">
-                      <ReloadOutlined onClick={generateUid} style={{ cursor: 'pointer', color: '#1890ff' }} />
+                      <ReloadOutlined onClick={generateCardNumber} style={{ cursor: 'pointer', color: '#1890ff' }} />
                     </Tooltip>
                   }
                 />
@@ -707,8 +864,12 @@ const NFCCardManagementPage: React.FC = () => {
           <div className="py-4">
             <Row gutter={[24, 24]}>
               <Col span={12}>
-                <Text type="secondary" className="text-xs uppercase font-semibold">Card Number (UID)</Text><br/>
+                <Text type="secondary" className="text-xs uppercase font-semibold">Physical Card UID</Text><br/>
                 <Text strong className="text-base">{selectedCard.uid}</Text>
+              </Col>
+              <Col span={12}>
+                <Text type="secondary" className="text-xs uppercase font-semibold">6-Digit Card Number</Text><br/>
+                <Text strong className="text-base">{selectedCard.cardNumber || '-'}</Text>
               </Col>
               <Col span={12}>
                 <Text type="secondary" className="text-xs uppercase font-semibold">Status</Text><br/>

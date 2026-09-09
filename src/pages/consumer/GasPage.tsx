@@ -618,15 +618,6 @@ export const GasPage: React.FC = () => {
             <Badge count={meters.length} style={{ backgroundColor: '#52c41a' }} />
           </Space>
         }
-        extra={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setShowAddMeter(true)}
-          >
-            Add Meter
-          </Button>
-        }
         style={{ marginBottom: 16 }}
       >
         {meters.length > 0 ? (
@@ -663,17 +654,7 @@ export const GasPage: React.FC = () => {
                       onClick={() => handleViewTopUpHistory(meter)}
                     >
                       Top Up History
-                    </Button>,
-                    <Button
-                      type="text"
-                      size="small"
-                      danger
-                      icon={<DeleteOutlined />}
-                      style={{ color: '#ff7875', fontSize: 12 }}
-                      onClick={() => handleDeleteMeter(meter)}
-                    >
-                      Remove
-                    </Button>,
+                    </Button>
                   ]}
                 >
                   <Space direction="vertical" size={8} style={{ width: '100%' }}>
@@ -749,16 +730,8 @@ export const GasPage: React.FC = () => {
         ) : (
           <Empty
             image={<FireOutlined style={{ fontSize: 64, color: '#ccc' }} />}
-            description="No gas meters added yet"
-          >
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => setShowAddMeter(true)}
-            >
-              Add Your First Meter
-            </Button>
-          </Empty>
+            description="No gas meters assigned to your account yet."
+          />
         )}
       </Card>
 
@@ -784,149 +757,7 @@ export const GasPage: React.FC = () => {
         />
       </Card>
 
-      {/* Add Meter Modal */}
-      <Modal
-        title={<><FireOutlined /> Add Gas Meter</>}
-        open={showAddMeter}
-        onCancel={() => {
-          setShowAddMeter(false);
-          addMeterForm.resetFields();
-        }}
-        footer={null}
-        width={500}
-      >
-        <Alert
-          title="Meter Registration"
-          description="Enter your meter details and owner information to register a new gas meter."
-          type="info"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-        <Form
-          form={addMeterForm}
-          layout="vertical"
-          onFinish={handleAddMeter}
-          initialValues={{ meter_type: 'TOKEN' }}
-        >
-          <Form.Item
-            name="meter_type"
-            label="Meter Type"
-            required
-          >
-            <Radio.Group
-              onChange={(e) => {
-                setAddMeterType(e.target.value);
-                if (e.target.value === 'TOKEN') {
-                  addMeterForm.setFieldsValue({ meter_number: generateMeterId() });
-                } else {
-                  addMeterForm.setFieldsValue({ meter_number: '' });
-                }
-              }}
-              value={addMeterType}
-              optionType="button"
-              buttonStyle="solid"
-            >
-              <Radio value="TOKEN">Token Meter (STS)</Radio>
-              <Radio value="PIPING">Piping Gas Meter (IMEI)</Radio>
-            </Radio.Group>
-          </Form.Item>
-
-          <Form.Item
-            name="meter_number"
-            label={addMeterType === 'TOKEN' ? "STS Meter Number" : "Piping Meter IMEI / devEui"}
-            rules={[
-              { required: true, message: addMeterType === 'TOKEN' ? 'Please enter STS meter number' : 'Please enter meter IMEI' },
-              { min: 6, message: 'Meter ID must be at least 6 characters' },
-            ]}
-            extra={
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                {addMeterType === 'TOKEN'
-                  ? "Enter the 11-digit STS meter number (Example: 58200077517)"
-                  : "Enter the device IMEI (devEui) used for Lorawan piping gas meters (Example: 865395070835176)"}
-              </Text>
-            }
-          >
-            <Input
-              prefix={addMeterType === 'TOKEN' ? <CreditCardOutlined /> : <IdcardOutlined />}
-              placeholder={addMeterType === 'TOKEN' ? "Enter STS meter number" : "Enter meter IMEI"}
-              size="large"
-              suffix={
-                addMeterType === 'TOKEN' && (
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={<HistoryOutlined />}
-                    onClick={() => addMeterForm.setFieldsValue({ meter_number: generateMeterId() })}
-                    title="Generate New ID"
-                  />
-                )
-              }
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="alias"
-            label="Nickname"
-            rules={[{ required: true, message: 'Please enter a nickname for this meter' }]}
-          >
-            <Input
-              prefix={<EditOutlined />}
-              placeholder="e.g., Home Kitchen, Restaurant"
-              size="large"
-            />
-          </Form.Item>
-
-          <Divider style={{ margin: '12px 0' }}>
-            <Text type="secondary" style={{ fontSize: 12 }}>OWNER INFORMATION</Text>
-          </Divider>
-
-          <Form.Item
-            name="owner_name"
-            label="Owner Full Name"
-            rules={[{ required: true, message: 'Please enter owner name' }]}
-          >
-            <Input
-              prefix={<UserOutlined />}
-              placeholder="Enter full name"
-              size="large"
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="owner_phone"
-            label="Owner Phone Number"
-            rules={[
-              { required: true, message: 'Please enter phone number' },
-              { pattern: /^\+?250\d{9}$/, message: 'Enter valid phone number (+250...)' }
-            ]}
-          >
-            <Input
-              prefix={<PhoneOutlined />}
-              placeholder="+250788123456"
-              size="large"
-            />
-          </Form.Item>
-
-          <Form.Item style={{ marginTop: 24, marginBottom: 0 }}>
-            <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
-              <Button onClick={() => {
-                setShowAddMeter(false);
-                addMeterForm.resetFields();
-              }}>
-                Cancel
-              </Button>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={processing}
-                icon={<PlusOutlined />}
-              >
-                Add Meter
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Modal>
+      {/* Add Meter Modal Removed */}
 
       {/* Top-up Modal */}
       <Modal

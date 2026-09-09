@@ -65,6 +65,7 @@ const menuItems: Record<UserRole, { key: string; icon: React.ReactNode; label: s
     { key: 'management', icon: <CreditCardOutlined />, label: 'My Management', path: '/retailer/management', mobileLabel: 'Manage' },
     { key: 'analytics', icon: <BarChartOutlined />, label: 'Analytics', path: '/retailer/analytics', mobileLabel: 'Stats' },
     { key: 'profit-invoices', icon: <FileTextOutlined />, label: 'Profit Invoices', path: '/retailer/profit-invoices', mobileLabel: 'Invoices' },
+    { key: 'taxes', icon: <FileTextOutlined />, label: 'Tax Management', path: '/retailer/taxes', mobileLabel: 'Taxes' },
     { key: 'profile', icon: <UserOutlined />, label: 'Profile', path: '/retailer/profile', mobileLabel: 'Profile' },
   ],
   wholesaler: [
@@ -77,6 +78,7 @@ const menuItems: Record<UserRole, { key: string; icon: React.ReactNode; label: s
     { key: 'management', icon: <ShopOutlined />, label: 'My Management', path: '/wholesaler/management', mobileLabel: 'Manage' },
     { key: 'analytics', icon: <BarChartOutlined />, label: 'Analytics', path: '/wholesaler/analytics', mobileLabel: 'Stats' },
     { key: 'profit-invoices', icon: <FileTextOutlined />, label: 'Profit Invoices', path: '/wholesaler/profit-invoices', mobileLabel: 'Invoices' },
+    { key: 'taxes', icon: <FileTextOutlined />, label: 'Tax Management', path: '/wholesaler/taxes', mobileLabel: 'Taxes' },
     { key: 'profile', icon: <UserOutlined />, label: 'Profile', path: '/wholesaler/profile', mobileLabel: 'Profile' },
   ],
   admin: [
@@ -91,11 +93,13 @@ const menuItems: Record<UserRole, { key: string; icon: React.ReactNode; label: s
     { key: 'refund-requests', icon: <UndoOutlined />, label: 'Refund Requests', path: '/admin/refund-requests', mobileLabel: 'Refunds' },
     { key: 'profit-invoices', icon: <FileTextOutlined />, label: 'Profit Invoices', path: '/admin/profit-invoices', mobileLabel: 'Profits' },
     { key: 'nfc-cards', icon: <CreditCardOutlined />, label: 'NFC Cards', path: '/admin/nfc-cards', mobileLabel: 'Cards' },
+    { key: 'gas-meters', icon: <FireOutlined />, label: 'Gas Meters', path: '/admin/gas-meters', mobileLabel: 'Meters' },
     { key: 'pricing-config', icon: <SettingOutlined />, label: 'Pricing Config', path: '/admin/pricing-config', mobileLabel: 'Pricing' },
     { key: 'reports', icon: <BarChartOutlined />, label: 'Reports', path: '/admin/reports', mobileLabel: 'Reports' },
     { key: 'email-monitoring', icon: <MailOutlined />, label: 'Email Monitoring', path: '/admin/email-monitoring', mobileLabel: 'Emails' },
     { key: 'email-templates', icon: <FileTextOutlined />, label: 'Email Templates', path: '/admin/email-templates', mobileLabel: 'Templates' },
     { key: 'content-management', icon: <FileTextOutlined />, label: 'News & Blogs', path: '/admin/content', mobileLabel: 'Content' },
+    { key: 'taxes', icon: <FileTextOutlined />, label: 'Tax Management', path: '/admin/taxes', mobileLabel: 'Taxes' },
     { key: 'profile', icon: <UserOutlined />, label: 'Profile', path: '/admin/profile', mobileLabel: 'Profile' },
   ],
 };

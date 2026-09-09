@@ -82,17 +82,19 @@ export default function ProfitInvoicesPage() {
                 const totalRevenue = Math.round(stats.totalRevenue * 100) / 100;
                 const grossProfit = Math.round(stats.grossProfit * 100) / 100;
                 const rewardsGivenAmt = Math.round(stats.gasRewardsGiven * 100) / 100;
+                const tax = stats.tax || 0; // Fetch calculated tax from backend
 
                 form.setFieldsValue({
                     totalOrders,
                     totalRevenue,
                     grossProfit,
-                    rewardsGivenAmt
+                    rewardsGivenAmt,
+                    tax
                 });
                 
                 // Manually trigger calculation since setFieldsValue doesn't fire onValuesChange
-                const allValues = { ...form.getFieldsValue(), totalOrders, totalRevenue, grossProfit, rewardsGivenAmt };
-                onValuesChange({ grossProfit, rewardsGivenAmt }, allValues);
+                const allValues = { ...form.getFieldsValue(), totalOrders, totalRevenue, grossProfit, rewardsGivenAmt, tax };
+                onValuesChange({ grossProfit, rewardsGivenAmt, tax }, allValues);
             }
         } catch (error: any) {
             message.error('Failed to fetch stats for recipient');

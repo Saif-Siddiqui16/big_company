@@ -178,10 +178,12 @@ export const OrdersPage = () => {
   const [inventoryProducts, setInventoryProducts] = useState<any[]>([]);
   const [configureLoading, setConfigureLoading] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Array<{ productId: string; quantity: number }>>([]);
+  const [rewardWalletId, setRewardWalletId] = useState<string>('');
 
   const handleOpenConfigureModal = async (order: Order) => {
     setSelectedConfigureOrder(order);
     setSelectedItems([]);
+    setRewardWalletId('');
     setConfigureModalVisible(true);
     setConfigureLoading(true);
     try {
@@ -226,7 +228,7 @@ export const OrdersPage = () => {
     }
     setConfigureLoading(true);
     try {
-      await retailerApi.configureOrder(selectedConfigureOrder.id, selectedItems);
+      await retailerApi.configureOrder(selectedConfigureOrder.id, selectedItems, rewardWalletId.trim() || undefined);
       message.success('Order configured successfully and requested payment');
       setConfigureModalVisible(false);
       loadOrders();
@@ -1214,6 +1216,17 @@ export const OrdersPage = () => {
               );
             }}
           />
+
+          <div style={{ marginTop: 16 }}>
+            <Text strong>Reward Wallet ID <Text type="secondary" style={{ fontSize: 12, fontWeight: 'normal' }}>(Optional — enter customer's gas meter number to route gas reward)</Text></Text>
+            <Input
+              style={{ marginTop: 8 }}
+              placeholder="e.g. 58200077517"
+              value={rewardWalletId}
+              onChange={e => setRewardWalletId(e.target.value)}
+              allowClear
+            />
+          </div>
         </Spin>
       </Modal>
 

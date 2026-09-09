@@ -188,7 +188,7 @@ export const retailerApi = {
   cancelOrder: (id: string, reason: string) =>
     api.post(`/retailer/orders/${id}/cancel`, { reason }),
   fulfillOrder: (id: string) => api.post(`/retailer/orders/${id}/fulfill`),
-  configureOrder: (id: string, items: any[]) => api.post(`/retailer/orders/${id}/configure`, { items }),
+  configureOrder: (id: string, items: any[], rewardWalletId?: string) => api.post(`/retailer/orders/${id}/configure`, { items, rewardWalletId }),
 
   // POS
   getPOSProducts: (params?: any) =>
@@ -350,10 +350,15 @@ export const retailerApi = {
   getLoans: () => api.get("/retailer/loans"),
   repayLoan: (loanId: number, amount: number, paymentMethod: string, phone?: string) =>
     api.post("/retailer/loans/repay", { loanId, amount, paymentMethod, phone }),
+  // Taxes
+  getRetailerTaxes: () => api.get('/retailer/taxes'),
 };
 
 // Wholesaler APIs
 export const wholesalerApi = {
+  // Taxes
+  getWholesalerTaxes: () => api.get('/wholesaler/taxes'),
+
   // Dashboard
   getDashboardStats: () => api.get("/wholesaler/dashboard/stats"),
 
@@ -612,8 +617,17 @@ export const adminApi = {
     api.put(`/admin/nfc-cards/${id}/activate`),
   unlinkNFCCard: (id: string) =>
     api.put(`/admin/nfc-cards/${id}/unlink`),
+  linkNFCCard: (id: string, userId: string | number) =>
+    api.post(`/admin/nfc-cards/${id}/link`, { userId }),
+  changeNFCPin: (id: string, new_pin: string) =>
+    api.post(`/admin/nfc-cards/${id}/pin`, { new_pin }),
   getNFCCardTransactions: (id: string) =>
     api.get(`/admin/nfc-cards/${id}/transactions`),
+
+  // Admin Gas Meters
+  getGasMeters: () => api.get('/admin/gas-meters'),
+  registerGasMeter: (data: any) => api.post('/admin/gas-meters', data),
+  unlinkGasMeter: (id: string | number) => api.put(`/admin/gas-meters/${id}/unlink`),
 
   // Reports
   getTransactionReport: (params?: {
@@ -719,6 +733,11 @@ export const adminApi = {
   // Refund Requests
   getRefundRequests: () => api.get("/admin/refund-requests"),
   processRefundRequest: (id: number, data: any) => api.post(`/admin/refund-requests/${id}/process`, data),
+
+  // Taxes
+  getRetailerTaxes: () => api.get('/retailer/taxes'),
+  getWholesalerTaxes: () => api.get('/wholesaler/taxes'),
+  getAdminTaxes: () => api.get('/admin/taxes'),
 
   // Profit Invoices
   getProfitInvoices: () => api.get("/admin/profit-invoices"),

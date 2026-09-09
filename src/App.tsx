@@ -53,6 +53,8 @@ import WalletCreditPage from './pages/wholesaler/WalletCreditPage';
 import MyManagementPage from './pages/wholesaler/MyManagementPage';
 import LinkRequestsPage from './pages/wholesaler/LinkRequestsPage';
 import WholesalerProfitInvoicesPage from './pages/wholesaler/ProfitInvoicesPage';
+import RetailerTaxManagementPage from './pages/retailer/TaxManagementPage';
+import WholesalerTaxManagementPage from './pages/wholesaler/TaxManagementPage';
 import ProfileSettingsPage from './pages/shared/ProfileSettingsPage';
 
 // Admin Pages
@@ -65,6 +67,7 @@ import RetailerManagementPage from './pages/admin/RetailerManagementPage';
 import WholesalerManagementPage from './pages/admin/WholesalerManagementPage';
 import LoanManagementPage from './pages/admin/LoanManagementPage';
 import NFCCardManagementPage from './pages/admin/NFCCardManagementPage';
+import GasMeterManagementPage from './pages/admin/GasMeterManagementPage';
 import ReportsPage from './pages/admin/ReportsPage';
 import CustomerManagementPage from './pages/admin/CustomerManagementPage';
 import EmployeeManagementPage from './pages/admin/EmployeeManagementPage';
@@ -76,6 +79,7 @@ import DealsPage from './pages/admin/DealsPage';
 import PricingConfigPage from './pages/admin/PricingConfigPage';
 import RefundRequestsPage from './pages/admin/RefundRequestsPage';
 import ProfitInvoicesPage from './pages/admin/ProfitInvoicesPage';
+import AdminTaxManagementPage from './pages/admin/TaxManagementPage';
 // New Admin Pages for Client Requirements
 import SettlementInvoicesPage from './pages/admin/SettlementInvoicesPage';
 import AccountDetailsPage from './pages/admin/AccountDetailsPage';
@@ -173,6 +177,7 @@ function App() {
               <Route path="customer-requests" element={<CustomerLinkRequestsPage />} />
               <Route path="profile" element={<ProfileSettingsPage />} />
               <Route path="profit-invoices" element={<RetailerProfitInvoicesPage />} />
+              <Route path="taxes" element={<RetailerTaxManagementPage />} />
             </Route>
 
             {/* Wholesaler Routes */}
@@ -196,6 +201,7 @@ function App() {
               <Route path="analytics" element={<WholesalerAnalyticsPage />} />
               <Route path="profile" element={<ProfileSettingsPage />} />
               <Route path="profit-invoices" element={<WholesalerProfitInvoicesPage />} />
+              <Route path="taxes" element={<WholesalerTaxManagementPage />} />
             </Route>
 
             {/* Admin Routes */}
@@ -215,6 +221,7 @@ function App() {
               <Route path="wholesalers" element={<WholesalerManagementPage />} />
               <Route path="loans" element={<LoanManagementPage />} />
               <Route path="nfc-cards" element={<NFCCardManagementPage />} />
+              <Route path="gas-meters" element={<GasMeterManagementPage />} />
               <Route path="pricing-config" element={<PricingConfigPage />} />
               <Route path="reports" element={<ReportsPage />} />
               <Route path="profile" element={<ProfileSettingsPage />} />
@@ -234,6 +241,7 @@ function App() {
               <Route path="deals" element={<DealsPage />} />
               <Route path="refund-requests" element={<RefundRequestsPage />} />
               <Route path="profit-invoices" element={<ProfitInvoicesPage />} />
+              <Route path="taxes" element={<AdminTaxManagementPage />} />
             </Route>
 
             {/* Catch all - redirect to home */}

@@ -651,29 +651,7 @@ const ConsumerWalletPage: React.FC = () => {
                                                </Card>
                                            </Col>
                                        ))}
-                                       {nfcCards.length < 3 && (
-                                           <Col xs={24} sm={12} md={8}>
-                                               <div 
-                                                   onClick={() => setLinkCardModalVisible(true)}
-                                                   style={{
-                                                       height: '100%',
-                                                       minHeight: 180,
-                                                       border: '2px dashed #d9d9d9',
-                                                       borderRadius: 16,
-                                                       display: 'flex',
-                                                       flexDirection: 'column',
-                                                       alignItems: 'center',
-                                                       justifyContent: 'center',
-                                                       cursor: 'pointer',
-                                                       transition: 'all 0.3s'
-                                                   }}
-                                                   className="link-card-placeholder"
-                                               >
-                                                   <PlusOutlined style={{ fontSize: 32, color: '#8c8c8c', marginBottom: 12 }} />
-                                                   <Text style={{ color: '#8c8c8c', fontWeight: 500 }}>Link New Card</Text>
-                                               </div>
-                                           </Col>
-                                       )}
+
                                    </Row>
                                </div>
                            )
