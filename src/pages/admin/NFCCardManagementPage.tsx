@@ -391,14 +391,17 @@ const NFCCardManagementPage: React.FC = () => {
 
   const expandedRowRender = (record: any) => {
     return (
-      <Table
-        columns={columns}
-        dataSource={record.cards}
-        pagination={false}
-        rowKey="id"
-        size="small"
-        className="bg-gray-50/50"
-      />
+      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <Table
+          columns={columns}
+          dataSource={record.cards}
+          pagination={false}
+          rowKey="id"
+          size="small"
+          className="bg-gray-50/50"
+          scroll={{ x: 700 }}
+        />
+      </div>
     );
   };
 
@@ -431,24 +434,24 @@ const NFCCardManagementPage: React.FC = () => {
   ];
 
   return (
-    <div className="bg-gray-100 min-h-screen p-6">
+    <div className="bg-gray-100 min-h-screen p-2 sm:p-4 md:p-6">
       <div className="max-w-[1600px] mx-auto">
         {/* Teal Header Banner */}
-        <div className="bg-[#00b5ad] p-6 rounded-xl shadow-sm mb-8 text-white flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <div className="bg-white/20 p-3 rounded-lg text-2xl">
+        <div className="bg-[#00b5ad] p-4 sm:p-6 rounded-xl shadow-sm mb-6 sm:mb-8 text-white flex flex-wrap gap-4 justify-between items-center">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="bg-white/20 p-2 sm:p-3 rounded-lg text-xl sm:text-2xl">
                 <CreditCardOutlined />
               </div>
               <div>
-                <h1 className="text-2xl font-bold m-0 text-white">NFC Card Management</h1>
-                <p className="text-white/80 m-0 text-sm">Manage NFC cards, assignments, and transactions</p>
+                <h1 className="text-lg sm:text-2xl font-bold m-0 text-white">NFC Card Management</h1>
+                <p className="text-white/80 m-0 text-xs sm:text-sm">Manage NFC cards, assignments, and transactions</p>
               </div>
             </div>
-            <Space size="middle">
+            <Space size="small" wrap>
               <Button 
                 icon={<ReloadOutlined />} 
                 onClick={fetchCards}
-                className="bg-white border-none text-gray-700 hover:text-[#00b5ad] h-9 px-5 rounded-lg flex items-center font-medium"
+                className="bg-white border-none text-gray-700 hover:text-[#00b5ad] h-9 px-4 rounded-lg flex items-center font-medium"
               >
                 Refresh
               </Button>
@@ -456,7 +459,7 @@ const NFCCardManagementPage: React.FC = () => {
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={() => setCreateModalVisible(true)}
-                className="bg-[#1890ff] hover:bg-[#40a9ff] border-none h-9 px-5 rounded-lg flex items-center font-medium shadow-sm transition-all"
+                className="bg-[#1890ff] hover:bg-[#40a9ff] border-none h-9 px-4 rounded-lg flex items-center font-medium shadow-sm transition-all"
               >
                 Register Card
               </Button>
@@ -513,30 +516,33 @@ const NFCCardManagementPage: React.FC = () => {
 
         {/* Table Card */}
         <Card bordered={false} className="shadow-sm rounded-xl overflow-hidden p-0 mb-8 min-h-[500px]">
-          <Table
-            columns={groupColumns}
-            dataSource={groupedCards}
-            expandable={{ expandedRowRender }}
-            rowKey="key"
-            loading={loading}
-            className="exact-ui-table"
-            pagination={{
-              showSizeChanger: true,
-              pageSize: 10,
-              showTotal: (total) => `Total ${total} groups`,
-              className: "px-6 py-4 border-t",
-            }}
-            locale={{
-              emptyText: (
-                <div className="py-24 flex flex-col items-center">
-                  <div className="w-16 h-16 bg-gray-50 rounded-lg flex items-center justify-center mb-4">
-                    <FileTextOutlined className="text-gray-300 text-3xl" />
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <Table
+              columns={groupColumns}
+              dataSource={groupedCards}
+              expandable={{ expandedRowRender }}
+              rowKey="key"
+              loading={loading}
+              className="exact-ui-table"
+              scroll={{ x: 600 }}
+              pagination={{
+                showSizeChanger: true,
+                pageSize: 10,
+                showTotal: (total) => `Total ${total} groups`,
+                className: "px-4 sm:px-6 py-4 border-t",
+              }}
+              locale={{
+                emptyText: (
+                  <div className="py-24 flex flex-col items-center">
+                    <div className="w-16 h-16 bg-gray-50 rounded-lg flex items-center justify-center mb-4">
+                      <FileTextOutlined className="text-gray-300 text-3xl" />
+                    </div>
+                    <p className="text-gray-400 text-sm">No data</p>
                   </div>
-                  <p className="text-gray-400 text-sm">No data</p>
-                </div>
-              )
-            }}
-          />
+                )
+              }}
+            />
+          </div>
         </Card>
       </div>
 
@@ -898,7 +904,8 @@ const NFCCardManagementPage: React.FC = () => {
                  <Text className="text-xs">{selectedCard.last_used ? new Date(selectedCard.last_used).toLocaleString() : 'Never'}</Text>
               </Col>
 
-              {selectedCard.cardholderName && (
+              {/* Cardholder Information — shown whenever card is linked to anyone */}
+              {(selectedCard.cardholderName || selectedCard.user_name || selectedCard.user_id) && (
                 <>
                   <Col span={24}>
                     <div className="bg-gray-50 p-4 rounded-lg mt-2">
@@ -907,7 +914,7 @@ const NFCCardManagementPage: React.FC = () => {
                   </Col>
                   <Col span={12}>
                     <Text type="secondary" className="text-xs uppercase font-semibold">Full Name</Text><br/>
-                    <Text>{selectedCard.cardholderName}</Text>
+                    <Text>{selectedCard.cardholderName || selectedCard.user_name || '-'}</Text>
                   </Col>
                   <Col span={12}>
                     <Text type="secondary" className="text-xs uppercase font-semibold">National ID</Text><br/>
@@ -950,7 +957,7 @@ const NFCCardManagementPage: React.FC = () => {
                 </>
               )}
 
-              {!selectedCard.cardholderName && !selectedCard.user_name && (
+              {!selectedCard.cardholderName && !selectedCard.user_name && !selectedCard.user_id && (
                 <Col span={24}>
                   <Alert
                     message="Unassigned Card"
