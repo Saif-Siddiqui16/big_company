@@ -326,7 +326,7 @@ const NFCCardManagementPage: React.FC = () => {
       if (ownerId) {
         const key = String(ownerId);
         if (!groups[key]) {
-          groups[key] = { user_name: card.cardholderName || card.user_name || 'Unknown', cards: [] };
+          groups[key] = { user_name: card.user_name || card.cardholderName || 'Unknown', cards: [] };
         }
         groups[key].cards.push(card);
       } else {

@@ -1218,7 +1218,7 @@ export const OrdersPage = () => {
           />
 
           <div style={{ marginTop: 16 }}>
-            <Text strong>Reward Wallet ID <Text type="secondary" style={{ fontSize: 12, fontWeight: 'normal' }}>(Optional — enter customer's gas meter number to route gas reward)</Text></Text>
+            <Text strong>Reward Wallet ID <Text type="secondary" style={{ fontSize: 12, fontWeight: 'normal' }}>(Optional — enter customer's Reward Wallet ID to route gas reward)</Text></Text>
             <Input
               style={{ marginTop: 8 }}
               placeholder="e.g. 58200077517"
