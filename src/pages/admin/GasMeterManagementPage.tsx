@@ -30,7 +30,11 @@ interface GasMeter {
     fullName?: string;
     user?: { name: string; phone: string; email: string };
     address?: string;
+    staticTotalUnits?: number;
+    staticTotalPaid?: number;
   };
+  lifetimeTotalUnits?: number;
+  lifetimeTotalPaid?: number;
 }
 
 interface CustomerGroup {
@@ -147,7 +151,6 @@ const GasMeterManagementPage: React.FC = () => {
       render: (_, record) => (
         <Space direction="vertical" size={0}>
           <Text type="secondary" style={{ fontSize: 12 }}>Units: {record.totalUnits?.toFixed(2)} m3</Text>
-          <Text type="secondary" style={{ fontSize: 12 }}>Paid: {formatCurrency(record.totalPaid)}</Text>
         </Space>
       ),
     },
@@ -197,14 +200,18 @@ const GasMeterManagementPage: React.FC = () => {
     {
       title: 'Total Units', key: 'total_units',
       render: (_, record) => {
-        const total = record.meters.reduce((sum, m) => sum + (m.totalUnits || 0), 0);
+        const firstMeter = record.meters[0];
+        const staticTotal = firstMeter?.consumerProfile?.staticTotalUnits;
+        const total = staticTotal !== undefined ? staticTotal : record.meters.reduce((sum, m) => sum + (m.totalUnits || 0), 0);
         return <Text strong>{total.toFixed(2)} m3</Text>;
       },
     },
     {
       title: 'Total Paid', key: 'total_paid',
       render: (_, record) => {
-        const total = record.meters.reduce((sum, m) => sum + (m.totalPaid || 0), 0);
+        const firstMeter = record.meters[0];
+        const staticTotal = firstMeter?.consumerProfile?.staticTotalPaid;
+        const total = staticTotal !== undefined ? staticTotal : record.meters.reduce((sum, m) => sum + (m.totalPaid || 0), 0);
         return <Text strong style={{ color: '#52c41a' }}>{formatCurrency(total)}</Text>;
       },
     },
@@ -357,10 +364,10 @@ const GasMeterManagementPage: React.FC = () => {
               {selectedMeter.consumerProfile?.address || 'Address not provided'}
             </Descriptions.Item>
             <Descriptions.Item label="Total Units Purchased">
-              <Text strong style={{ color: '#52c41a' }}>{selectedMeter.totalUnits?.toFixed(2)} m3</Text>
+              <Text strong style={{ color: '#52c41a' }}>{selectedMeter.lifetimeTotalUnits?.toFixed(2) || '0.00'} m3</Text>
             </Descriptions.Item>
             <Descriptions.Item label="Total Amount Paid">
-              <Text strong>{formatCurrency(selectedMeter.totalPaid)}</Text>
+              <Text strong>{formatCurrency(selectedMeter.lifetimeTotalPaid || 0)}</Text>
             </Descriptions.Item>
           </Descriptions>
         )}
