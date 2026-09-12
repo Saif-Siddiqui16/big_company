@@ -647,6 +647,7 @@ const ConsumerWalletPage: React.FC = () => {
                                                    </div>
                                                    <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                                                        <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10 }}>UID: {card.uid}</Text>
+                                                       {card.card_number && <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10 }}>Card No: {card.card_number}</Text>}
                                                    </div>
                                                </Card>
                                            </Col>
