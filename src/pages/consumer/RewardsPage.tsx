@@ -151,7 +151,7 @@ export const RewardsPage: React.FC = () => {
             return {
               id: item.id.toString(),
               type: fType,
-              points: Math.abs(item.points || 0),
+              points: item.points || 0,
               description: item.description || 'Gas reward',
               created_at: item.created_at || new Date().toISOString(),
               meter_id: item.meter_id,
@@ -350,7 +350,7 @@ export const RewardsPage: React.FC = () => {
       dataIndex: 'points',
       key: 'points',
       render: (points: number, record: RewardTransaction) => {
-        const isPositive = points > 0;
+        const isPositive = points >= 0;
         const gasAmount = (Math.abs(points) * 0.01).toFixed(4);
         return (
           <Text strong style={{ color: isPositive ? '#52c41a' : '#ff4d4f' }}>
@@ -379,12 +379,11 @@ export const RewardsPage: React.FC = () => {
 
   // Custom render for columns to handle types better
   const renderAmount = (points: number, record: RewardTransaction) => {
-    const isPositive = points > 0;
+    const isPositive = points >= 0;
     const gasAmount = (Math.abs(points) * 0.01).toFixed(4);
     return (
       <Text strong style={{ color: isPositive ? '#52c41a' : '#ff4d4f' }}>
-        {isPositive ? '+' : '-'}
-        {gasAmount} M³
+        {isPositive ? '+' : '-'} {gasAmount} M³
       </Text>
     );
   };

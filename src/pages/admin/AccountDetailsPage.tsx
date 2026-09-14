@@ -1198,14 +1198,23 @@ const AccountDetailsPage: React.FC = () => {
                       {
                         title: 'Customer',
                         key: 'customer',
-                        render: (_: any, record: any) => (
-                          <div>
-                            <Text strong>{record.consumerProfile?.fullName || '—'}</Text>
-                            {record.consumerProfile?.phone && (
-                              <><br /><Text type="secondary" style={{ fontSize: 12 }}>{record.consumerProfile.phone}</Text></>
-                            )}
-                          </div>
-                        ),
+                        render: (_: any, record: any) => {
+                          const name = record.consumerProfile?.user?.name || record.consumerProfile?.fullName;
+                          const phone = record.consumerProfile?.user?.phone || record.consumerProfile?.phone;
+                          
+                          if (!record.consumerProfile && !name) {
+                            return <Text type="secondary" italic>Walk-in Customer</Text>;
+                          }
+                          
+                          return (
+                            <div>
+                              <Text strong>{name || 'Walk-in Customer'}</Text>
+                              {phone && (
+                                <><br /><Text type="secondary" style={{ fontSize: 12 }}>{phone}</Text></>
+                              )}
+                            </div>
+                          );
+                        },
                       },
                       {
                         title: 'Items',
