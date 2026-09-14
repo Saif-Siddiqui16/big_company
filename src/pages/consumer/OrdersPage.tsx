@@ -130,7 +130,7 @@ const cancelReasons = [
   'Other',
 ];
 
-type OrderFilter = 'all' | 'active' | 'completed' | 'credit';
+type OrderFilter = 'all' | 'active' | 'completed' | 'credit' | 'credit_utilities';
 
 export const OrdersPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -459,6 +459,9 @@ export const OrdersPage: React.FC = () => {
       case 'credit':
         filtered = orders.filter(o => o.payment_method === 'card_credit' || o.payment_method === 'food_loan');
         break;
+      case 'credit_utilities':
+        filtered = orders.filter(o => o.payment_method === 'credit_wallet');
+        break;
       default:
         filtered = orders;
     }
@@ -535,6 +538,10 @@ export const OrdersPage: React.FC = () => {
           {
             key: 'credit',
             label: `Credit Orders (${orders.filter(o => o.payment_method === 'card_credit' || o.payment_method === 'food_loan').length})`,
+          },
+          {
+            key: 'credit_utilities',
+            label: `Credit Utilities (${orders.filter(o => o.payment_method === 'credit_wallet').length})`,
           },
         ]}
       />

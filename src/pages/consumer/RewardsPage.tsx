@@ -58,7 +58,7 @@ interface RewardsBalance {
 
 interface RewardTransaction {
   id: string;
-  type: 'earned' | 'redeemed' | 'expired' | 'bonus' | 'referral';
+  type: string;
   points: number;
   description: string;
   created_at: string;
@@ -350,8 +350,8 @@ export const RewardsPage: React.FC = () => {
       dataIndex: 'points',
       key: 'points',
       render: (points: number, record: RewardTransaction) => {
-        const isPositive = ['earned', 'bonus', 'referral', 'purchase'].includes(record.type);
-        const gasAmount = (points * 0.01).toFixed(4);
+        const isPositive = points > 0;
+        const gasAmount = (Math.abs(points) * 0.01).toFixed(4);
         return (
           <Text strong style={{ color: isPositive ? '#52c41a' : '#ff4d4f' }}>
             {isPositive ? '+' : '-'} {gasAmount} M³
@@ -360,21 +360,26 @@ export const RewardsPage: React.FC = () => {
       },
     },
     {
-      title: 'Order ID',
+      title: 'Order ID / Ref',
       dataIndex: 'order_id',
       key: 'order_id',
-      render: (orderId: string) => orderId ? (
-        <Button type="link" size="small" onClick={() => message.info(`View invoice for ${orderId}`)}>
-          {orderId}
-        </Button>
-      ) : 'N/A',
+      render: (orderId: string, record: RewardTransaction) => {
+         if (record.type === 'shared' || record.type === 'converted') {
+            return <Text type="secondary">{orderId || record.id}</Text>;
+         }
+         return orderId ? (
+          <Button type="link" size="small" onClick={() => message.info(`View invoice for ${orderId}`)}>
+            {orderId}
+          </Button>
+        ) : 'N/A';
+      },
       width: 130,
     },
   ];
 
   // Custom render for columns to handle types better
   const renderAmount = (points: number, record: RewardTransaction) => {
-    const isPositive = points >= 0;
+    const isPositive = points > 0;
     const gasAmount = (Math.abs(points) * 0.01).toFixed(4);
     return (
       <Text strong style={{ color: isPositive ? '#52c41a' : '#ff4d4f' }}>
