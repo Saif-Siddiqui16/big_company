@@ -554,29 +554,7 @@ export const MyManagementPage: React.FC = () => {
               pagination={{ pageSize: 10 }}
             />
           </TabPane>
-          <TabPane
-            tab={
-              <span>
-                <FileTextOutlined /> Profit Invoices ({invoices.length})
-              </span>
-            }
-            key="invoices"
-          >
-            <Alert
-              message="Admin Profit Invoices"
-              description="Monthly profit invoices sent by admin after expenses are removed. These show your net profit after platform fees and other deductions."
-              type="info"
-              showIcon
-              style={{ marginBottom: 16 }}
-            />
-            <Table
-              columns={invoiceColumns}
-              dataSource={invoices}
-              rowKey="id"
-              loading={loading}
-              pagination={{ pageSize: 10 }}
-            />
-          </TabPane>
+
         </Tabs>
       </Card>
 

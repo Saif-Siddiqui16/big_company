@@ -42,6 +42,7 @@ const { Title, Text, Paragraph } = Typography;
 interface CardTransaction {
   id: string;
   card_id: string;
+  card_number?: string;
   card_last4: string;
   order_id: string;
   customer_name: string;
@@ -77,6 +78,8 @@ const ManagementPage: React.FC = () => {
   const [balanceCheckModalVisible, setBalanceCheckModalVisible] = useState(false);
   const [invoiceModalVisible, setInvoiceModalVisible] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<ProfitInvoice | null>(null);
+  const [transactionInvoiceModalVisible, setTransactionInvoiceModalVisible] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<CardTransaction | null>(null);
   const [customerBalance, setCustomerBalance] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [cardTransactions, setCardTransactions] = useState<CardTransaction[]>([]);
@@ -101,7 +104,8 @@ const ManagementPage: React.FC = () => {
         const formattedTxs = txRes.data.data.map((log: any) => ({
           id: log.id.toString(),
           card_id: log.cardId,
-          card_last4: log.cardId.slice(-4),
+          card_number: log.cardNumber,
+          card_last4: log.cardNumber ? log.cardNumber.slice(-4) : log.cardId.slice(-4),
           order_id: log.orderId ? `ORD-${log.orderId}` : 'N/A',
           customer_name: log.customerName || 'N/A',
           amount: log.amount,
@@ -171,7 +175,7 @@ const ManagementPage: React.FC = () => {
       render: (_, record) => (
         <Space>
           <CreditCardOutlined style={{ color: '#1890ff' }} />
-          <Text>****{record.card_last4}</Text>
+          <Text>{record.card_number || `****${record.card_last4}`}</Text>
         </Space>
       ),
     },
@@ -218,7 +222,10 @@ const ManagementPage: React.FC = () => {
       title: 'Action',
       key: 'action',
       render: (_, record) => (
-        <Button type="link" icon={<EyeOutlined />}>View Invoice</Button>
+        <Button type="link" icon={<EyeOutlined />} onClick={() => {
+          setSelectedTransaction(record);
+          setTransactionInvoiceModalVisible(true);
+        }}>View Invoice</Button>
       ),
     },
   ];
@@ -344,12 +351,12 @@ const ManagementPage: React.FC = () => {
               <Form form={form} layout="vertical" onFinish={handleBalanceCheck}>
                 <Form.Item
                   name="card_uid"
-                  label="Customer Card UID"
-                  rules={[{ required: true, message: 'Enter customer card UID' }]}
+                  label="Customer Card UID / Number"
+                  rules={[{ required: true, message: 'Enter customer card UID or Number' }]}
                 >
                   <Input
                     prefix={<CreditCardOutlined />}
-                    placeholder="Enter or scan card UID"
+                    placeholder="Enter or scan card UID or Number"
                   />
                 </Form.Item>
                 <Form.Item
@@ -482,35 +489,7 @@ const ManagementPage: React.FC = () => {
         </>
       ),
     },
-    {
-      key: 'profit-invoices',
-      label: (
-        <span>
-          <FileTextOutlined /> Profit Invoices
-        </span>
-      ),
-      children: (
-        <Card
-          title="Monthly Profit Invoices from Admin"
-          extra={<Text type="secondary">Net profit transferred to your bank account after expenses</Text>}
-        >
-          <Alert
-            title="Profit Distribution"
-            description="Each month, admin calculates your net profit after deducting monthly expenses and transfers it to your registered bank account."
-            type="info"
-            showIcon
-            style={{ marginBottom: 24 }}
-          />
-          <Table
-            columns={profitInvoiceColumns}
-            dataSource={profitInvoices}
-            rowKey="id"
-            pagination={{ pageSize: 10 }}
-            loading={fetchingData}
-          />
-        </Card>
-      ),
-    },
+
   ];
 
   return (
@@ -577,6 +556,58 @@ const ManagementPage: React.FC = () => {
               showIcon
             />
           </Space>
+        )}
+      </Modal>
+
+      {/* Transaction Invoice Modal */}
+      <Modal
+        title="Transaction Invoice"
+        open={transactionInvoiceModalVisible}
+        onCancel={() => setTransactionInvoiceModalVisible(false)}
+        footer={[
+          <Button key="close" onClick={() => setTransactionInvoiceModalVisible(false)}>
+            Close
+          </Button>
+        ]}
+        width={500}
+      >
+        {selectedTransaction && (
+          <div style={{ padding: '20px', backgroundColor: '#fff', border: '1px solid #f0f0f0', borderRadius: '8px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <Title level={4} style={{ margin: 0, color: '#001529' }}>INVOICE</Title>
+              <Text type="secondary">REF: {selectedTransaction.order_id}</Text>
+            </div>
+            
+            <Divider style={{ margin: '12px 0' }} />
+            
+            <Row justify="space-between" style={{ marginBottom: '8px' }}>
+              <Col><Text type="secondary">Date:</Text></Col>
+              <Col><Text strong>{dayjs(selectedTransaction.date).format('MMM DD, YYYY HH:mm')}</Text></Col>
+            </Row>
+            <Row justify="space-between" style={{ marginBottom: '8px' }}>
+              <Col><Text type="secondary">Customer:</Text></Col>
+              <Col><Text strong>{selectedTransaction.customer_name}</Text></Col>
+            </Row>
+            <Row justify="space-between" style={{ marginBottom: '8px' }}>
+              <Col><Text type="secondary">Card used:</Text></Col>
+              <Col><Text strong>{selectedTransaction.card_number || `****${selectedTransaction.card_last4}`}</Text></Col>
+            </Row>
+            <Row justify="space-between" style={{ marginBottom: '8px' }}>
+              <Col><Text type="secondary">Payment Type:</Text></Col>
+              <Col><Text strong>{selectedTransaction.payment_type === 'dashboard' ? 'Dashboard Wallet' : 'Credit Wallet'}</Text></Col>
+            </Row>
+            <Row justify="space-between" style={{ marginBottom: '8px' }}>
+              <Col><Text type="secondary">Status:</Text></Col>
+              <Col><Tag color="green">COMPLETED</Tag></Col>
+            </Row>
+
+            <Divider style={{ margin: '12px 0' }} />
+            
+            <Row justify="space-between">
+              <Col><Text strong style={{ fontSize: '16px' }}>Total Amount:</Text></Col>
+              <Col><Text strong style={{ fontSize: '16px', color: '#1890ff' }}>{selectedTransaction.amount.toLocaleString()} RWF</Text></Col>
+            </Row>
+          </div>
         )}
       </Modal>
     </div>
