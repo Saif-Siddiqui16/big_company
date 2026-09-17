@@ -783,13 +783,7 @@ export const ProfileSettingsPage: React.FC = () => {
         destroyOnClose
       >
         <Form form={pinForm} layout="vertical" onFinish={handleUpdatePin}>
-          <Form.Item
-            name="old_pin"
-            label="Current PIN"
-            rules={[{ required: true, message: 'Please enter current PIN' }]}
-          >
-            <Input.Password prefix={<MobileOutlined />} maxLength={4} />
-          </Form.Item>
+
           <Form.Item
             name="new_pin"
             label="New PIN"

@@ -160,7 +160,6 @@ export const ProfilePage: React.FC = () => {
     setLoading(true);
     try {
       await authApi.updatePin({
-        old_pin: values.old_pin,
         new_pin: values.new_pin,
       });
       message.success('PIN updated successfully');
@@ -552,13 +551,6 @@ export const ProfilePage: React.FC = () => {
         destroyOnClose
       >
         <Form form={pinForm} layout="vertical" onFinish={handleUpdatePin}>
-          <Form.Item
-            name="old_pin"
-            label="Current PIN"
-            rules={[{ required: true, message: 'Please enter current PIN' }]}
-          >
-            <Input.Password prefix={<MobileOutlined />} maxLength={4} />
-          </Form.Item>
           <Form.Item
             name="new_pin"
             label="New PIN"
