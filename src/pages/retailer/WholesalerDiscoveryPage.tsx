@@ -81,10 +81,17 @@ const WholesalerDiscoveryPage: React.FC = () => {
   useEffect(() => {
     fetchWholesalers();
     fetchMyRequests();
+
+    const interval = setInterval(() => {
+      fetchWholesalers(true);
+      fetchMyRequests(true);
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, [search]);
 
-  const fetchWholesalers = async () => {
-    setLoading(true);
+  const fetchWholesalers = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const response = await api.get('/retailer/wholesalers/available', {
         params: { search }
@@ -92,18 +99,18 @@ const WholesalerDiscoveryPage: React.FC = () => {
       setWholesalers(response.data.wholesalers || []);
       setCurrentLinkedId(response.data.currentLinkedWholesalerId || null);
     } catch (error: any) {
-      message.error('Failed to fetch wholesalers');
+      if (!silent) message.error('Failed to fetch wholesalers');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
-  const fetchMyRequests = async () => {
+  const fetchMyRequests = async (silent = false) => {
     try {
       const response = await api.get('/retailer/wholesalers/link-requests');
       setMyRequests(response.data.requests || []);
     } catch (error: any) {
-      console.error('Failed to fetch requests:', error);
+      if (!silent) console.error('Failed to fetch requests:', error);
     }
   };
 

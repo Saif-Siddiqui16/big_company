@@ -86,27 +86,34 @@ const LinkRequestsPage: React.FC = () => {
   useEffect(() => {
     fetchRequests();
     fetchLinkedRetailers();
+
+    const interval = setInterval(() => {
+      fetchRequests(true);
+      fetchLinkedRetailers(true);
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  const fetchRequests = async () => {
-    setLoading(true);
+  const fetchRequests = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const response = await api.get('/wholesaler/link-requests');
       setRequests(response.data.requests || []);
       setStats(response.data.stats || { pending: 0, approved: 0, rejected: 0, total: 0 });
     } catch (error: any) {
-      message.error('Failed to fetch link requests');
+      if (!silent) message.error('Failed to fetch link requests');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
-  const fetchLinkedRetailers = async () => {
+  const fetchLinkedRetailers = async (silent = false) => {
     try {
       const response = await api.get('/wholesaler/linked-retailers');
       setLinkedRetailers(response.data.retailers || []);
     } catch (error: any) {
-      console.error('Failed to fetch linked retailers:', error);
+      if (!silent) console.error('Failed to fetch linked retailers:', error);
     }
   };
 
