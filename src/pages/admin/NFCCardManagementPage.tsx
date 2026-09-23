@@ -905,7 +905,7 @@ const NFCCardManagementPage: React.FC = () => {
               </Col>
 
               {/* Cardholder Information — shown whenever card is linked to anyone */}
-              {(selectedCard.cardholderName || selectedCard.user_name || selectedCard.user_id) && (
+              {(selectedCard.user_name || selectedCard.cardholderName || selectedCard.user_id) && (
                 <>
                   <Col span={24}>
                     <div className="bg-gray-50 p-4 rounded-lg mt-2">
@@ -914,7 +914,7 @@ const NFCCardManagementPage: React.FC = () => {
                   </Col>
                   <Col span={12}>
                     <Text type="secondary" className="text-xs uppercase font-semibold">Full Name</Text><br/>
-                    <Text>{selectedCard.cardholderName || selectedCard.user_name || '-'}</Text>
+                    <Text>{selectedCard.user_name || selectedCard.cardholderName || '-'}</Text>
                   </Col>
                   <Col span={12}>
                     <Text type="secondary" className="text-xs uppercase font-semibold">National ID</Text><br/>
