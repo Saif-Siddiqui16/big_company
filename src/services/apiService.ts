@@ -553,6 +553,7 @@ export const adminApi = {
     api.post(`/admin/customers/${id}/credit`, { amount, reason }),
   updateCustomerStatus: (id: string, data: { status: string }) =>
     api.put(`/admin/customers/${id}/status`, data),
+  verifyCustomer: (id: string) => api.post(`/admin/customers/${id}/verify`),
 
   // Categories
   getCategories: () => api.get("/admin/categories"),

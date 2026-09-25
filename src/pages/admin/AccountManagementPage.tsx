@@ -334,8 +334,7 @@ const AccountManagementPage: React.FC = () => {
           } else if (type === 'wholesaler') {
             await adminApi.verifyWholesaler(id);
           } else {
-            message.info('Customer verification is handled via profile details.');
-            return;
+            await adminApi.verifyCustomer(id);
           }
           message.success('Account verified successfully');
           loadAccounts();
@@ -585,6 +584,16 @@ const AccountManagementPage: React.FC = () => {
             View
           </Button>
           <Button type="link" danger size="small" onClick={() => handleDeleteCustomer(record.id)}>Delete</Button>
+          {!record.isVerified && (
+            <Button
+              type="link"
+              size="small"
+              className="text-orange-500"
+              onClick={() => handleVerifyAccount(record.id, 'customer')}
+            >
+              Verify
+            </Button>
+          )}
           <Button
             type="link"
             size="small"
