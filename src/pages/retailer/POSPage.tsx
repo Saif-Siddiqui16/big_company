@@ -34,6 +34,7 @@ import {
   ShoppingCartOutlined,
 } from '@ant-design/icons';
 import { retailerApi } from '../../services/apiService';
+import { printThermalReceipt } from '../../utils/receiptPrinter';
 
 const { Title, Text } = Typography;
 
@@ -90,7 +91,8 @@ const POSPage = () => {
 
   // Payment modal state
   const [paymentModal, setPaymentModal] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'bigshop_card' | 'momo' | 'airtel'>('bigshop_card');
+  const [paymentMethod, setPaymentMethod] = useState<'bigshop_card' | 'momo' | 'airtel' | 'cash'>('cash');
+  const [cashTendered, setCashTendered] = useState<number>(0);
   const [processing, setProcessing] = useState(false);
 
   // Big Shop Card payment flow
@@ -179,16 +181,33 @@ const POSPage = () => {
     }
   };
 
-  // Barcode scanning — opens quantity modal instead of adding directly
+  // Barcode scanning — directly adds product to cart for fast desktop cashier scanning
   const handleBarcodeScan = async (barcode: string) => {
-    if (!barcode.trim()) return;
+    const code = barcode.trim();
+    if (!code) return;
     setScanLoading(true);
+
     try {
-      const response = await retailerApi.scanBarcode(barcode);
+      // 1. Instant local match from already loaded products
+      const localProduct = products.find(
+        (p) =>
+          (p.barcode && p.barcode.toLowerCase() === code.toLowerCase()) ||
+          (p.sku && p.sku.toLowerCase() === code.toLowerCase())
+      );
+
+      if (localProduct) {
+        addToCart(localProduct);
+        message.success(`Added: ${localProduct.name}`);
+        setBarcodeInput('');
+        setTimeout(() => barcodeInputRef.current?.focus(), 50);
+        return;
+      }
+
+      // 2. Query backend if not loaded locally
+      const response = await retailerApi.scanBarcode(code);
       if (response.data?.product) {
-        setScannedProduct(response.data.product);
-        setScanQuantity(1);
-        setScanModal(true);
+        addToCart(response.data.product);
+        message.success(`Added: ${response.data.product.name}`);
       } else {
         message.warning('Product not found for this barcode');
       }
@@ -196,9 +215,9 @@ const POSPage = () => {
       message.error(error.response?.data?.error || 'Barcode scan failed');
     } finally {
       setScanLoading(false);
+      setBarcodeInput('');
+      setTimeout(() => barcodeInputRef.current?.focus(), 50);
     }
-    setBarcodeInput('');
-    barcodeInputRef.current?.focus();
   };
 
   // Confirm scanned product with entered quantity
@@ -344,7 +363,7 @@ const POSPage = () => {
         subtotal,
         tax_amount: taxAmount,
         tax_rate: TAX_RATE,
-        payment_method: method as 'dashboard_wallet' | 'credit_wallet' | 'mobile_money',
+        payment_method: method as any,
         customer_phone: customer?.phone || customerPhone || undefined,
         discount: discountAmount > 0 ? discountAmount : undefined,
         gasRewardWalletId: paymentDetails?.gasRewardWalletId || gasRewardWalletId || undefined,
@@ -360,9 +379,9 @@ const POSPage = () => {
           // MoMo: payment is waiting for customer to enter PIN on phone
           message.info('Payment request sent to customer\'s phone. Sale will be confirmed once they approve the MoMo prompt.');
         } else {
-          // Wallet / NFC: payment is complete immediately
+          // Cash / Wallet / NFC: payment is complete immediately
           message.success('Sale completed successfully!');
-          setLastSale({
+          const completedSale = {
             ...response.data,
             items: cart,
             subtotal,
@@ -370,10 +389,34 @@ const POSPage = () => {
             discount: discountAmount,
             total,
             method,
+            cashReceived: method === 'cash' ? (cashTendered || total) : undefined,
+            change: method === 'cash' ? Math.max(0, (cashTendered || total) - total) : undefined,
             gasRewardWalletId: paymentDetails?.gasRewardWalletId || gasRewardWalletId,
-          });
-          // Show receipt only for completed payments
+          };
+          setLastSale(completedSale);
           setReceiptModal(true);
+
+          // AUTO-PRINT THERMAL RECEIPT IMMEDIATELY
+          printThermalReceipt({
+            receiptNo: '#' + (response.data?.sale?.id?.toString().padStart(6, '0') || '000000'),
+            date: response.data?.sale?.createdAt || new Date(),
+            paymentMethod: method.toUpperCase(),
+            items: cart.map((i) => ({
+              name: i.name,
+              quantity: i.quantity,
+              unitPrice: i.price,
+              total: i.price * i.quantity,
+              unit: i.unit,
+              sku: i.sku,
+            })),
+            subtotal,
+            tax: taxAmount,
+            discount: discountAmount,
+            total,
+            cashReceived: method === 'cash' ? (cashTendered || total) : undefined,
+            change: method === 'cash' ? Math.max(0, (cashTendered || total) - total) : undefined,
+            gasRewardWalletId: paymentDetails?.gasRewardWalletId || gasRewardWalletId,
+          }, { autoPrint: true });
         }
 
         // Reset state regardless of payment type (prevents double-submit)
@@ -386,6 +429,7 @@ const POSPage = () => {
         setCardPin('');
         setCardUid('');
         setGasRewardWalletId('');
+        setCashTendered(0);
 
         // Refresh stats and products
         loadDailyStats();
@@ -422,6 +466,15 @@ const POSPage = () => {
     let paymentDetails: any = {};
 
     switch (paymentMethod) {
+      case 'cash':
+        paymentType = 'cash';
+        paymentDetails = {
+          cash_tendered: cashTendered || total,
+          change: Math.max(0, (cashTendered || total) - total),
+          gasRewardWalletId: gasRewardWalletId || undefined,
+        };
+        break;
+
       case 'bigshop_card':
         paymentType = 'nfc';
         paymentDetails = {
@@ -456,7 +509,27 @@ const POSPage = () => {
 
   // Print receipt
   const printReceipt = () => {
-    window.print();
+    if (!lastSale) return;
+    printThermalReceipt({
+      receiptNo: '#' + (lastSale.sale?.id?.toString().padStart(6, '0') || '000000'),
+      date: lastSale.sale?.createdAt || new Date(),
+      paymentMethod: (lastSale.method || lastSale.sale?.paymentMethod || 'CASH').toUpperCase(),
+      items: (lastSale.items || []).map((i: any) => ({
+        name: i.name,
+        quantity: i.quantity,
+        unitPrice: i.price,
+        total: i.price * i.quantity,
+        unit: i.unit,
+        sku: i.sku,
+      })),
+      subtotal: lastSale.subtotal || 0,
+      tax: lastSale.tax || 0,
+      discount: lastSale.discount || 0,
+      total: lastSale.total || 0,
+      cashReceived: lastSale.cashReceived,
+      change: lastSale.change,
+      gasRewardWalletId: lastSale.gasRewardWalletId,
+    }, { autoPrint: true });
   };
 
   // Filtered products
@@ -817,6 +890,15 @@ const POSPage = () => {
           style={{ width: '100%', marginBottom: 24 }}
         >
           <Space direction="vertical" style={{ width: '100%' }}>
+            <Radio.Button value="cash" style={{ width: '100%', height: 56, display: 'flex', alignItems: 'center', padding: '0 16px' }}>
+              <Space>
+                <DollarOutlined style={{ fontSize: 20, color: '#52c41a' }} />
+                <div>
+                  <div style={{ fontWeight: 500 }}>Cash Payment</div>
+                  <div style={{ fontSize: 11, color: '#8c8c8c' }}>Pay with cash & calculate change</div>
+                </div>
+              </Space>
+            </Radio.Button>
             <Radio.Button value="bigshop_card" style={{ width: '100%', height: 56, display: 'flex', alignItems: 'center', padding: '0 16px' }}>
               <Space>
                 <CreditCardOutlined style={{ fontSize: 20, color: '#1890ff' }} />
@@ -1053,10 +1135,80 @@ const POSPage = () => {
             </Button>
           </div>
         )}
+
+        {/* Cash Payment Flow */}
+        {paymentMethod === 'cash' && (
+          <div>
+            <div style={{ background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 8, padding: 14, marginBottom: 16, textAlign: 'center' }}>
+              <div style={{ fontSize: 12, color: '#52c41a', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Total Amount Due
+              </div>
+              <div style={{ fontSize: 26, fontWeight: 900, color: '#389e0d', marginTop: 2 }}>
+                {total.toLocaleString()} RWF
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <Text strong style={{ display: 'block', marginBottom: 6 }}>Cash Tendered (Received):</Text>
+              <InputNumber
+                size="large"
+                style={{ width: '100%', fontSize: 18 }}
+                min={0}
+                value={cashTendered || total}
+                onChange={(val) => setCashTendered(val || 0)}
+                prefix={<DollarOutlined style={{ color: '#52c41a' }} />}
+                formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              />
+            </div>
+
+            {/* Quick cash shortcuts */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+              <Button size="small" onClick={() => setCashTendered(total)}>Exact</Button>
+              <Button size="small" onClick={() => setCashTendered(Math.ceil(total / 500) * 500)}>Round 500</Button>
+              <Button size="small" onClick={() => setCashTendered(Math.ceil(total / 1000) * 1000)}>Round 1,000</Button>
+              <Button size="small" onClick={() => setCashTendered(Math.ceil(total / 5000) * 5000)}>Round 5,000</Button>
+            </div>
+
+            <div style={{ background: '#fafafa', border: '1px dashed #d9d9d9', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+              <Row justify="space-between" align="middle">
+                <Text type="secondary" style={{ fontSize: 13 }}>Change to Return:</Text>
+                <Text strong style={{ fontSize: 18, color: (cashTendered || total) >= total ? '#52c41a' : '#f5222d' }}>
+                  {Math.max(0, (cashTendered || total) - total).toLocaleString()} RWF
+                </Text>
+              </Row>
+              {(cashTendered || total) < total && (
+                <Text type="danger" style={{ fontSize: 11, display: 'block', marginTop: 4 }}>
+                  Warning: Amount tendered is less than total due.
+                </Text>
+              )}
+            </div>
+
+            <Input
+              size="large"
+              placeholder="Gas Reward Wallet ID (Optional)"
+              value={gasRewardWalletId}
+              onChange={(e) => setGasRewardWalletId(e.target.value)}
+              prefix={<span style={{ color: '#fa541c' }}>🎁</span>}
+              style={{ marginBottom: 16 }}
+            />
+
+            <Button
+              type="primary"
+              size="large"
+              block
+              loading={processing}
+              disabled={(cashTendered || total) < total}
+              onClick={handlePayment}
+              style={{ background: '#52c41a', borderColor: '#52c41a' }}
+            >
+              {processing ? 'Processing Sale...' : `Complete Cash Sale (${total.toLocaleString()} RWF)`}
+            </Button>
+          </div>
+        )}
       </Modal>
 
       <Modal
-        title={null} // Cleaner header for modern look
+        title={null}
         open={receiptModal}
         onCancel={() => setReceiptModal(false)}
         footer={[
@@ -1067,153 +1219,169 @@ const POSPage = () => {
             New Sale
           </Button>,
         ]}
-        width={450}
+        width={400}
         centered
         closable={false}
       >
         {lastSale && (
-          <div className="modern-receipt-print" style={{ color: '#262626' }}>
-            {/* Header / Branding */}
-            <div style={{ textAlign: 'center', marginBottom: 16 }}>
-              <div style={{ textAlign: 'center', marginBottom: 4 }}>
-                <img
-                  src="/logo-big.png"
-                  alt="BIG"
-                  style={{
-                    height: '60px',
-                    display: 'block',
-                    margin: '0 auto',
-                    objectFit: 'contain'
-                  }}
-                />
-              </div>
+          <div style={{
+            color: '#000',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+            fontSize: 12,
+            lineHeight: 1.35,
+            padding: '4px 8px'
+          }}>
+            {/* Header / Branding matching physical slip */}
+            <div style={{ textAlign: 'center', marginBottom: 6 }}>
+              <img
+                src="/logo-big.png"
+                alt="BIG"
+                style={{
+                  height: 42,
+                  display: 'block',
+                  margin: '0 auto 4px',
+                  objectFit: 'contain'
+                }}
+              />
               <div style={{
-                fontSize: '20px',
-                fontWeight: 900,
-                letterSpacing: '-0.5px',
-                color: '#1890ff',
-                lineHeight: 1.1,
+                fontSize: 16,
+                fontWeight: 800,
+                color: '#000',
+                lineHeight: 1.15
               }}>
                 Big Innovation Group Ltd
               </div>
-              <div style={{ fontSize: '11px', color: '#8c8c8c', marginTop: 4 }}>
+              <div style={{ fontSize: 10, color: '#333', marginTop: 2 }}>
                 Kigali, Rwanda | +250788541239 | info@big.co.rw
               </div>
-              <div style={{ fontSize: '10px', color: '#8c8c8c', textTransform: 'uppercase', letterSpacing: '2px', marginTop: 8 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 4 }}>
                 Official Sales Receipt
               </div>
             </div>
 
+            <div style={{ borderTop: '1px dashed #000', margin: '8px 0' }} />
+
             {/* Meta Details */}
-            <div style={{
-              background: '#f8fafc',
-              padding: '16px',
-              borderRadius: '12px',
-              marginBottom: 20,
-              fontSize: '13px',
-              border: '1px solid #f1f5f9'
-            }}>
-              <Row justify="space-between" style={{ marginBottom: 6 }}>
-                <Text type="secondary">Receipt No:</Text>
-                <Text strong style={{ color: '#0f172a' }}>
+            <div style={{ fontSize: 11, marginBottom: 4 }}>
+              <Row justify="space-between" style={{ marginBottom: 2 }}>
+                <span style={{ color: '#333' }}>Receipt No:</span>
+                <span style={{ fontWeight: 700 }}>
                   #{lastSale.sale?.id?.toString().padStart(6, '0') || 'N/A'}
-                </Text>
+                </span>
               </Row>
-              <Row justify="space-between" style={{ marginBottom: 6 }}>
-                <Text type="secondary">Date:</Text>
-                <Text style={{ color: '#0f172a' }}>
-                  {new Date(lastSale.sale?.createdAt || new Date()).toLocaleString('en-RW', {
-                    dateStyle: 'medium',
-                    timeStyle: 'short'
+              <Row justify="space-between" style={{ marginBottom: 2 }}>
+                <span style={{ color: '#333' }}>Date:</span>
+                <span>
+                  {new Date(lastSale.sale?.createdAt || new Date()).toLocaleString('en-GB', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
                   })}
-                </Text>
+                </span>
               </Row>
               <Row justify="space-between">
-                <Text type="secondary">Payment Method:</Text>
-                <Tag color="blue" style={{ margin: 0, fontSize: '10px', fontWeight: 700, borderRadius: '4px' }}>
-                  {(lastSale.method || lastSale.sale?.paymentMethod || 'CASH').toUpperCase().replace('_', ' ')}
-                </Tag>
+                <span style={{ color: '#333' }}>Payment Method:</span>
+                <span style={{ fontWeight: 700, textTransform: 'uppercase' }}>
+                  {(lastSale.method || lastSale.sale?.paymentMethod || 'CASH').replace(/_/g, ' ')}
+                </span>
               </Row>
             </div>
+
+            <div style={{ borderTop: '1px dashed #000', margin: '8px 0' }} />
 
             {/* Items Table Header */}
-            <div style={{ padding: '0 4px', marginBottom: 8 }}>
-              <Row style={{ borderBottom: '2px solid #f0f0f0', paddingBottom: 8, fontWeight: 600, fontSize: '12px' }}>
-                <Col span={12}>ITEM DESCRIPTION</Col>
-                <Col span={4} style={{ textAlign: 'center' }}>QTY</Col>
-                <Col span={8} style={{ textAlign: 'right' }}>PRICE</Col>
-              </Row>
-            </div>
+            <Row style={{ fontWeight: 700, fontSize: 10, paddingBottom: 4, borderBottom: '1px dashed #000' }}>
+              <Col span={14}>ITEM<br />DESCRIPTION</Col>
+              <Col span={3} style={{ textAlign: 'center' }}>QTY</Col>
+              <Col span={7} style={{ textAlign: 'right' }}>PRICE</Col>
+            </Row>
 
             {/* Items List */}
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ margin: '4px 0' }}>
               {lastSale.items?.map((item: CartItem, index: number) => (
-                <Row key={index} align="middle" style={{ padding: '8px 4px', borderBottom: '1px solid #f9f9f9', fontSize: '14px' }}>
-                  <Col span={12}>
-                    <div style={{ fontWeight: 500 }}>{item.name}</div>
-                    <div style={{ fontSize: '11px', color: '#8c8c8c' }}>Unit: {item.price?.toLocaleString()} RWF</div>
+                <Row key={index} align="top" style={{ padding: '4px 0', fontSize: 11 }}>
+                  <Col span={14}>
+                    <div style={{ fontWeight: 600, lineHeight: 1.2 }}>{item.name}</div>
+                    <div style={{ fontSize: 9, color: '#444' }}>Unit: {item.price?.toLocaleString()} RWF</div>
                   </Col>
-                  <Col span={4} style={{ textAlign: 'center' }}>{item.quantity}</Col>
-                  <Col span={8} style={{ textAlign: 'right', fontWeight: 600 }}>
+                  <Col span={3} style={{ textAlign: 'center', fontWeight: 500 }}>{item.quantity}</Col>
+                  <Col span={7} style={{ textAlign: 'right', fontWeight: 700 }}>
                     {(item.price * item.quantity).toLocaleString()}
                   </Col>
                 </Row>
               ))}
             </div>
 
+            <div style={{ borderTop: '1px dashed #000', margin: '8px 0' }} />
+
             {/* Totals Section */}
-            <div style={{ padding: '0 4px' }}>
-              <Row justify="space-between" style={{ marginBottom: 4 }}>
-                <Text type="secondary">Subtotal</Text>
-                <Text>{lastSale.subtotal?.toLocaleString()} RWF</Text>
+            <div style={{ fontSize: 11, marginBottom: 4 }}>
+              <Row justify="space-between" style={{ marginBottom: 2 }}>
+                <span style={{ color: '#333' }}>Subtotal</span>
+                <span style={{ fontWeight: 600 }}>{lastSale.subtotal?.toLocaleString()} RWF</span>
               </Row>
-              <Row justify="space-between" style={{ marginBottom: 4 }}>
-                <Text type="secondary">Tax (18% VAT Included)</Text>
-                <Text>{lastSale.tax?.toLocaleString()} RWF</Text>
+              <Row justify="space-between" style={{ marginBottom: 2 }}>
+                <span style={{ color: '#333' }}>Tax (18% VAT Included)</span>
+                <span>{lastSale.tax?.toLocaleString()} RWF</span>
               </Row>
               {lastSale.discount > 0 && (
-                <Row justify="space-between" style={{ marginBottom: 4, color: '#f5222d' }}>
-                  <Text style={{ color: 'inherit' }}>Discount</Text>
-                  <Text style={{ color: 'inherit' }}>-{lastSale.discount?.toLocaleString()} RWF</Text>
+                <Row justify="space-between" style={{ marginBottom: 2 }}>
+                  <span style={{ color: '#333' }}>Discount</span>
+                  <span>-{lastSale.discount?.toLocaleString()} RWF</span>
                 </Row>
               )}
-
-              <div style={{
-                marginTop: 16,
-                padding: '16px',
-                background: '#1890ff',
-                borderRadius: '12px',
-                color: 'white'
-              }}>
-                <Row justify="space-between" align="middle">
-                  <div style={{ fontSize: '14px', opacity: 0.9 }}>TOTAL AMOUNT</div>
-                  <div style={{ fontSize: '24px', fontWeight: 800 }}>
-                    {lastSale.total?.toLocaleString()} RWF
-                  </div>
+              {lastSale.cashReceived !== undefined && (
+                <Row justify="space-between" style={{ marginBottom: 2 }}>
+                  <span style={{ color: '#333' }}>Cash Received</span>
+                  <span style={{ fontWeight: 600 }}>{lastSale.cashReceived?.toLocaleString()} RWF</span>
                 </Row>
+              )}
+              {lastSale.change !== undefined && (
+                <Row justify="space-between" style={{ marginBottom: 2 }}>
+                  <span style={{ color: '#333' }}>Change Return</span>
+                  <span style={{ fontWeight: 600 }}>{lastSale.change?.toLocaleString()} RWF</span>
+                </Row>
+              )}
+            </div>
+
+            <div style={{ borderTop: '1px dashed #000', margin: '8px 0' }} />
+
+            {/* Big Total Amount matching physical receipt (no blue box) */}
+            <div style={{ textAlign: 'center', padding: '6px 0', margin: '4px 0' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                TOTAL AMOUNT
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 900, marginTop: 2, color: '#000' }}>
+                {lastSale.total?.toLocaleString()} RWF
               </div>
             </div>
 
             {/* Rewards Info */}
             {lastSale.gasRewardWalletId && (
               <div style={{
-                marginTop: 20,
                 textAlign: 'center',
-                padding: '8px',
-                border: '1px dashed #d9d9d9',
-                borderRadius: '8px',
-                fontSize: '12px'
+                padding: '4px',
+                border: '1px dashed #666',
+                margin: '8px 0',
+                fontSize: 10
               }}>
-                <span style={{ color: '#8c8c8c' }}>Rewards linked to: </span>
-                <Text strong style={{ color: '#fa541c' }}>{lastSale.gasRewardWalletId}</Text>
+                <span>Rewards linked to: </span>
+                <span style={{ fontWeight: 700 }}>{lastSale.gasRewardWalletId}</span>
               </div>
             )}
 
+            <div style={{ borderTop: '1px dashed #000', margin: '8px 0' }} />
+
             {/* Footer */}
-            <div style={{ textAlign: 'center', marginTop: 32, paddingBottom: 8 }}>
-              <div style={{ fontWeight: 600, fontSize: '14px', marginBottom: 4 }}>Thank you for shopping!</div>
-              <div style={{ fontSize: '11px', color: '#8c8c8c' }}>For support: +250788541239 | info@big.co.rw</div>
-              <div style={{ fontSize: '10px', color: '#bfbfbf', marginTop: 12 }}>PROCESSED BY Big Innovation Group Ltd</div>
+            <div style={{ textAlign: 'center', marginTop: 8, paddingBottom: 4 }}>
+              <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 2 }}>Thank you for shopping!</div>
+              <div style={{ fontSize: 10, color: '#444' }}>For support: +250788541239 | info@big.co.rw</div>
+              <div style={{ fontSize: 9, color: '#666', marginTop: 4, textTransform: 'uppercase' }}>
+                PROCESSED BY Big Innovation Group Ltd
+              </div>
             </div>
           </div>
         )}

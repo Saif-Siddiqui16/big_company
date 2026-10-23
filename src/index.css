@@ -767,44 +767,16 @@ body {
 .chart-container-mobile > div {
   min-width: 300px;
 }
-/* Robust Modern POS Receipt Printing */
+/* Robust Thermal Receipt Printing */
+@page {
+  margin: 0;
+  size: auto;
+}
+
 @media print {
-  /* Hide the root app and all its siblings */
-  #root, .ant-modal-mask, .ant-modal-wrap, .ant-modal-root {
-    visibility: hidden !important;
-    height: 0 !important;
-    overflow: hidden !important;
-  }
-
-  /* Force only the modern-receipt-print to be visible */
-  .modern-receipt-print {
+  /* Hide the root app when iframe printing is active */
+  #thermal-receipt-iframe {
     visibility: visible !important;
-    position: fixed !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 80mm !important; /* Standard receipt width */
-    margin: 0 !important;
-    padding: 10mm !important;
-    background: white !important;
     display: block !important;
-    z-index: 99999 !important;
-    font-family: 'Inter', system-ui, sans-serif !important;
-  }
-
-  .modern-receipt-print * {
-    visibility: visible !important;
-  }
-
-  /* Reset body background for print */
-  body {
-    background: white !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  /* Disable margins/headers/footers in browser print settings if possible */
-  @page {
-    margin: 0;
-    size: auto;
   }
 }

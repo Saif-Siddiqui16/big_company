@@ -32,6 +32,7 @@ import {
   PrinterOutlined,
 } from '@ant-design/icons';
 import { retailerApi } from '../../services/apiService';
+import { printThermalReceipt } from '../../utils/receiptPrinter';
 
 const { Title, Text } = Typography;
 
@@ -171,13 +172,38 @@ export const PurchaseOrdersPage = () => {
 
   const handlePrint = () => {
     if (!viewModal.order) return;
-
     const order = viewModal.order;
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      message.error('Please allow popups to print');
-      return;
-    }
+    const finalTotal = Number(order.total_amount ?? order.total ?? order.totalAmount ?? 0);
+    const finalSubtotal = Number(order.subtotal ?? finalTotal);
+    const finalTax = Number(order.tax_amount ?? order.tax ?? Math.round((finalTotal * 0.18) / 1.18));
+
+    printThermalReceipt({
+      receiptNo: '#' + (order.order_number || order.id),
+      date: order.created_at || new Date(),
+      paymentMethod: (order.payment_method || 'CREDIT WALLET').toUpperCase(),
+      customerName: order.wholesaler_name,
+      items: (order.items || []).map((item: any) => {
+        const qty = Number(item.quantity || 1);
+        const uPrice = Number(item.unit_price ?? item.price ?? 0);
+        const itemTot = Number(item.total ?? (uPrice * qty));
+        return {
+          name: item.product_name || item.name || 'Product',
+          quantity: qty,
+          unitPrice: uPrice,
+          total: itemTot,
+        };
+      }),
+      subtotal: finalSubtotal,
+      tax: finalTax,
+      total: finalTotal,
+      receiptTitle: 'STOCK PURCHASE RECEIPT',
+    }, { autoPrint: true });
+    return;
+  };
+
+  const _unusedOldPrint = () => {
+    const order: any = null;
+    const printWindow: any = null;
 
     const htmlContent = `
       <!DOCTYPE html>

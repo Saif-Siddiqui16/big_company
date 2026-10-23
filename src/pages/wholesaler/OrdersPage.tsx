@@ -28,8 +28,10 @@ import {
   DollarOutlined,
   ClockCircleOutlined,
   EyeOutlined,
+  PrinterOutlined,
 } from '@ant-design/icons';
 import { wholesalerApi } from '../../services/apiService';
+import { printThermalReceipt } from '../../utils/receiptPrinter';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -323,6 +325,29 @@ const OrdersPage = () => {
     });
   };
 
+  const handlePrintOrderReceipt = (order: Order | null) => {
+    if (!order) return;
+    const retailer = getRetailerInfo(order);
+    printThermalReceipt({
+      receiptNo: '#' + (order.orderNumber || order.displayId || String(order.id).substring(0, 8)),
+      date: order.createdAt || new Date(),
+      paymentMethod: (order.paymentMethod || 'BANK TRANSFER').toUpperCase(),
+      retailerName: retailer.shopName || retailer.user?.name || 'Retailer',
+      retailerPhone: retailer.user?.phone || '',
+      items: (order.items || []).map((item) => ({
+        name: item.name || item.product?.name || 'Product',
+        quantity: item.quantity,
+        unitPrice: item.price,
+        total: item.total || item.price * item.quantity,
+        sku: item.sku || item.product?.sku,
+      })),
+      subtotal: order.subtotal || order.totalAmount,
+      tax: order.tax || Math.round((order.totalAmount * 0.18) / 1.18),
+      total: order.totalAmount,
+      receiptTitle: 'WHOLESALE ORDER INVOICE',
+    }, { autoPrint: true });
+  };
+
   const getStatusStep = (status: string) => {
     switch (status) {
       case 'pending': return 0;
@@ -411,6 +436,13 @@ const OrdersPage = () => {
             onClick={() => viewOrderDetails(record)}
           >
             View
+          </Button>
+          <Button
+            size="small"
+            icon={<PrinterOutlined />}
+            onClick={() => handlePrintOrderReceipt(record)}
+          >
+            Print
           </Button>
           {record.status === 'pending' && (
             <>
@@ -714,6 +746,13 @@ const OrdersPage = () => {
         footer={[
           <Button key="close" onClick={() => setDetailModalOpen(false)}>
             Close
+          </Button>,
+          <Button
+            key="print"
+            icon={<PrinterOutlined />}
+            onClick={() => handlePrintOrderReceipt(selectedOrder)}
+          >
+            Print Receipt
           </Button>,
           selectedOrder?.status === 'pending' && (
             <Button
