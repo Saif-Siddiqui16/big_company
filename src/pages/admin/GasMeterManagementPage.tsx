@@ -298,6 +298,13 @@ const GasMeterManagementPage: React.FC = () => {
             rules={[{ required: true, message: 'Please enter meter number' }]}>
             <Input size="large" prefix={<IdcardOutlined />} placeholder="Enter meter number" />
           </Form.Item>
+          <Form.Item name="meter_type" label="Meter Type"
+            rules={[{ required: true, message: 'Please select meter type' }]}>
+            <Select size="large" placeholder="Select meter type">
+              <Option value="TOKEN">Token (Zamuka)</Option>
+              <Option value="PIPING">Piping (Tekana)</Option>
+            </Select>
+          </Form.Item>
           <Form.Item name="consumerId" label="Assign to Customer"
             rules={[{ required: true, message: 'Please select a customer' }]}>
             <Select showSearch size="large" placeholder="Select a customer" optionFilterProp="children"
