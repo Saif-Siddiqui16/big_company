@@ -172,7 +172,12 @@ const WholesalerManagementPage: React.FC = () => {
     try {
       const response = await adminApi.getWholesalerAccountDetails(record.id.toString());
       if (response.data?.success) {
-        setSelectedWholesaler(response.data.wholesaler);
+        const profile = response.data.accountDetails?.profile;
+        setSelectedWholesaler({
+          ...profile,
+          contact_person: profile?.contactPerson,
+          user: { isActive: profile?.isActive }
+        });
         setViewModalVisible(true);
       }
     } catch (error) {
