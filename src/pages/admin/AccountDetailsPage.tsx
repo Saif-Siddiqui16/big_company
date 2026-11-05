@@ -34,6 +34,7 @@ import {
 } from 'antd';
 import { jsPDF } from 'jspdf';
 import JsBarcode from 'jsbarcode';
+import { printThermalReceipt } from '../../utils/receiptPrinter';
 import {
   UserOutlined,
   WalletOutlined,
@@ -63,6 +64,9 @@ import {
   EnvironmentOutlined,
   PhoneOutlined,
   PrinterOutlined,
+  DownloadOutlined,
+  ShoppingOutlined,
+  FileTextOutlined,
   CheckOutlined,
   CloseOutlined,
   SearchOutlined,
@@ -91,6 +95,7 @@ const AccountDetailsPage: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   // Wholesale stock order modal (admin retailer view)
   const [selectedStockOrder, setSelectedStockOrder] = useState<any>(null);
@@ -99,6 +104,197 @@ const AccountDetailsPage: React.FC = () => {
   const [salesStatus, setSalesStatus] = useState('');
   const [salesPayment, setSalesPayment] = useState('');
   const [activeTabKey, setActiveTabKey] = useState('orders');
+
+  const handleDownloadReceipt = () => {
+    if (!selectedOrder) return;
+
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const img = new Image();
+
+    const generate = (imgData?: string, imgWidth?: number, imgHeight?: number) => {
+      try {
+        const pageWidth = doc.internal.pageSize.getWidth();
+        let y = 20;
+
+        // Draw logo
+        if (imgData && imgWidth && imgHeight) {
+          const targetWidth = 45;
+          const targetHeight = targetWidth * (imgHeight / imgWidth);
+          doc.addImage(imgData, 'JPEG', 20, y, targetWidth, targetHeight);
+          y += targetHeight + 6;
+        } else {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(20);
+          doc.text('BIG', 20, y);
+          y += 10;
+        }
+
+        // Company Details
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(24, 144, 255); // #1890ff
+        doc.text('Big Innovation Group Ltd', 20, y);
+        y += 6;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.text('Kigali, Rwanda | +250788541239 | info@big.co.rw', 20, y);
+        y += 8;
+
+        // Border line
+        doc.setDrawColor(24, 144, 255);
+        doc.setLineWidth(0.5);
+        doc.line(20, y, pageWidth - 20, y);
+        y += 10;
+
+        // Receipt title
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Official Receipt', 20, y);
+        y += 8;
+
+        // Info details
+        const receiptNo = selectedOrder.order_number || selectedOrder.display_id || ('ORD-' + selectedOrder.id);
+        const orderDate = selectedOrder.createdAt || selectedOrder.created_at || new Date();
+        const formattedOrderDate = new Date(orderDate).toLocaleString();
+        const storeName = selectedOrder.retailerProfile?.shopName || selectedOrder.retailer?.name || 'IKIZERE SHOP';
+        const storeLocation = selectedOrder.retailerProfile?.address || selectedOrder.retailer?.location || 'KG14 Ave189, Gisozi, Gasabo, Kigali, Rwanda';
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.text(`Receipt #: ${receiptNo}`, 20, y);
+        doc.text(`Date: ${formattedOrderDate}`, pageWidth - 80, y);
+        y += 6;
+
+        doc.text(`Status: ${(selectedOrder.status || '').toUpperCase()}`, 20, y);
+        doc.text(`Payment: ${(selectedOrder.paymentMethod || selectedOrder.payment_method || 'N/A').toUpperCase()}`, pageWidth - 80, y);
+        y += 10;
+
+        // Store details
+        doc.setFont('helvetica', 'bold');
+        doc.text('Store Details:', 20, y);
+        y += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Store Name: ${storeName}`, 20, y);
+        y += 5;
+        doc.text(`Location: ${storeLocation}`, 20, y);
+        y += 10;
+
+        // Table Header
+        doc.setFont('helvetica', 'bold');
+        doc.text('Item Description', 20, y);
+        doc.text('Qty', 110, y, { align: 'center' });
+        doc.text('Price (RWF)', 140, y, { align: 'right' });
+        doc.text('Total (RWF)', pageWidth - 20, y, { align: 'right' });
+        y += 4;
+
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.3);
+        doc.line(20, y, pageWidth - 20, y);
+        y += 6;
+
+        // Table Items
+        doc.setFont('helvetica', 'normal');
+        const items = selectedOrder.saleItems || selectedOrder.items || [];
+        items.forEach((item: any) => {
+          if (y > doc.internal.pageSize.getHeight() - 30) {
+            doc.addPage();
+            y = 20;
+          }
+          const itemName = item.product?.name || item.product_name || item.productName || 'Product';
+          const qty = item.quantity || 1;
+          const unitPrice = item.price || item.unit_price || 0;
+          const itemTotal = item.total || (qty * unitPrice);
+
+          doc.text(itemName, 20, y);
+          doc.text(String(qty), 110, y, { align: 'center' });
+          doc.text(unitPrice.toLocaleString(), 140, y, { align: 'right' });
+          doc.text(itemTotal.toLocaleString(), pageWidth - 20, y, { align: 'right' });
+          y += 7;
+        });
+
+        // Totals
+        y += 3;
+        doc.setDrawColor(0, 0, 0);
+        doc.line(20, y, pageWidth - 20, y);
+        y += 8;
+
+        const subtotal = selectedOrder.subtotal || selectedOrder.totalAmount || selectedOrder.total || 0;
+        const totalAmount = selectedOrder.totalAmount || selectedOrder.total || subtotal;
+        const taxAmount = Math.round(totalAmount - (totalAmount / 1.18));
+
+        doc.text('Subtotal:', 130, y);
+        doc.text(subtotal.toLocaleString() + ' RWF', pageWidth - 20, y, { align: 'right' });
+        y += 6;
+
+        if (selectedOrder.delivery_fee && selectedOrder.delivery_fee > 0) {
+          doc.text('Delivery Fee:', 130, y);
+          doc.text(selectedOrder.delivery_fee.toLocaleString() + ' RWF', pageWidth - 20, y, { align: 'right' });
+          y += 6;
+        }
+
+        // Tax row (18% VAT included)
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.text('Tax (18% VAT included):', 130, y);
+        doc.text(taxAmount.toLocaleString() + ' RWF', pageWidth - 20, y, { align: 'right' });
+        y += 6;
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.text('TOTAL:', 130, y);
+        doc.text(totalAmount.toLocaleString() + ' RWF', pageWidth - 20, y, { align: 'right' });
+        y += 15;
+
+        // Footer
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(150, 150, 150);
+        doc.text('Thank you for shopping with Big Innovation Group Ltd!', pageWidth / 2, y, { align: 'center' });
+        y += 5;
+        doc.text('For support: +250788541239 | info@big.co.rw', pageWidth / 2, y, { align: 'center' });
+
+        doc.save(`receipt_${receiptNo}.pdf`);
+        message.success(`Receipt for ${receiptNo} downloaded`);
+      } catch (err) {
+        console.error(err);
+        message.error('Failed to generate PDF download');
+      }
+    };
+
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        try {
+          const dataURL = canvas.toDataURL('image/jpeg', 1.0);
+          generate(dataURL, img.naturalWidth, img.naturalHeight);
+        } catch (e) {
+          generate();
+        }
+      } else {
+        generate();
+      }
+    };
+
+    img.onerror = () => {
+      generate();
+    };
+
+    img.src = '/logo-big.png';
+  };
 
   // Barcode printing states
   const [barcodeModalVisible, setBarcodeModalVisible] = useState(false);
@@ -213,7 +409,7 @@ const AccountDetailsPage: React.FC = () => {
     if (barcodeExportFormat === 'csv') {
       let csvContent = "data:text/csv;charset=utf-8,";
       csvContent += "Product Name,SKU,Barcode,Selling Price,Unit of Measure\n";
-      
+
       selectedProducts.forEach((p: any) => {
         const qty = barcodeQuantities[p.id] || 1;
         const barcodeVal = p.barcode || p.sku || 'N/A';
@@ -1045,22 +1241,22 @@ const AccountDetailsPage: React.FC = () => {
             };
 
             // Revenue totals — use salesStats from backend (filtered by lastSettlementDate, matches retailer's own dashboard)
-            const ss            = accountData.salesStats || {};
-            const totalRevenue  = ss.totalRevenue           || 0;
+            const ss = accountData.salesStats || {};
+            const totalRevenue = ss.totalRevenue || 0;
             const walletRevenue = ss.dashboardWalletRevenue || 0;
-            const creditRevenue = ss.creditWalletRevenue    || 0;
-            const momoRevenue   = ss.mobileMoneyRevenue     || 0;
-            const gasRewardsM3  = ss.gasRewardsM3           || 0;
-            const gasRewardsRwf = ss.gasRewardsRwf          || 0;
+            const creditRevenue = ss.creditWalletRevenue || 0;
+            const momoRevenue = ss.mobileMoneyRevenue || 0;
+            const gasRewardsM3 = ss.gasRewardsM3 || 0;
+            const gasRewardsRwf = ss.gasRewardsRwf || 0;
 
-             // Status counts — computed from the 20 most recent sales (matches how the retailer's OrdersPage computes them from the paginated result)
-             const recentSalesStats = allSales.slice(0, 20);
-             const pendingCount   = recentSalesStats.filter((s: any) => s.status === 'pending').length;
-             const proceedCount   = recentSalesStats.filter((s: any) => s.status === 'processing' || s.status === 'confirmed').length;
-             const shippedCount   = recentSalesStats.filter((s: any) => s.status === 'shipped').length;
-             const readyCount     = recentSalesStats.filter((s: any) => s.status === 'ready').length;
-             const completedCount = recentSalesStats.filter((s: any) => s.status === 'completed' || s.status === 'delivered').length;
-             const cancelledCount = recentSalesStats.filter((s: any) => s.status === 'cancelled').length;
+            // Status counts — computed from the 20 most recent sales (matches how the retailer's OrdersPage computes them from the paginated result)
+            const recentSalesStats = allSales.slice(0, 20);
+            const pendingCount = recentSalesStats.filter((s: any) => s.status === 'pending').length;
+            const proceedCount = recentSalesStats.filter((s: any) => s.status === 'processing' || s.status === 'confirmed').length;
+            const shippedCount = recentSalesStats.filter((s: any) => s.status === 'shipped').length;
+            const readyCount = recentSalesStats.filter((s: any) => s.status === 'ready').length;
+            const completedCount = recentSalesStats.filter((s: any) => s.status === 'completed' || s.status === 'delivered').length;
+            const cancelledCount = recentSalesStats.filter((s: any) => s.status === 'cancelled').length;
 
             // Relative time helper
             const getRelativeTime = (dateStr: string) => {
@@ -1073,8 +1269,8 @@ const AccountDetailsPage: React.FC = () => {
 
             const filtered = allSales.filter((s: any) => {
               const name = s.consumerProfile?.fullName?.toLowerCase() || '';
-              const matchSearch  = !salesSearch  || name.includes(salesSearch.toLowerCase()) || String(s.id).includes(salesSearch);
-              const matchStatus  = !salesStatus  || s.status === salesStatus;
+              const matchSearch = !salesSearch || name.includes(salesSearch.toLowerCase()) || String(s.id).includes(salesSearch);
+              const matchStatus = !salesStatus || s.status === salesStatus;
               const matchPayment = !salesPayment || s.paymentMethod === salesPayment;
               return matchSearch && matchStatus && matchPayment;
             });
@@ -1201,11 +1397,11 @@ const AccountDetailsPage: React.FC = () => {
                         render: (_: any, record: any) => {
                           const name = record.consumerProfile?.user?.name || record.consumerProfile?.fullName;
                           const phone = record.consumerProfile?.user?.phone || record.consumerProfile?.phone;
-                          
+
                           if (!record.consumerProfile && !name) {
                             return <Text type="secondary" italic>Walk-in Customer</Text>;
                           }
-                          
+
                           return (
                             <div>
                               <Text strong>{name || 'Walk-in Customer'}</Text>
@@ -1414,7 +1610,7 @@ const AccountDetailsPage: React.FC = () => {
         <TabPane tab={<span><ShopOutlined /> Inventory Data</span>} key="inventory">
           {(() => {
             const invProducts = accountData.products || [];
-            
+
             // Normalize products matching retailer page
             const normalizedInvProducts = invProducts.map((p: any) => {
               const pCostPrice = p.cost_price || p.cost || p.costPrice || 0;
@@ -1551,11 +1747,11 @@ const AccountDetailsPage: React.FC = () => {
                         </div>
                       ),
                     },
-                    { 
-                      title: 'Category', 
-                      dataIndex: 'category', 
-                      key: 'category', 
-                      render: (c: string) => <Tag>{c}</Tag> 
+                    {
+                      title: 'Category',
+                      dataIndex: 'category',
+                      key: 'category',
+                      render: (c: string) => <Tag>{c}</Tag>
                     },
                     {
                       title: 'Stock',
@@ -1563,11 +1759,11 @@ const AccountDetailsPage: React.FC = () => {
                       render: (_: any, record: any) => {
                         const status = getStockStatus(record.stock, record.low_stock_threshold);
                         const percentage = Math.min((record.stock / (record.low_stock_threshold * 2)) * 100, 100);
-                        
+
                         const conversionFactor = record.conversionFactor;
                         const purchaseUnit = record.purchaseUnit;
                         const baseUnit = record.baseUnit;
-                        
+
                         let stockLabel = `${record.stock} ${record.unit || 'units'}`;
                         if (conversionFactor && conversionFactor > 0) {
                           const purchaseQty = record.stock / conversionFactor;
@@ -1617,7 +1813,7 @@ const AccountDetailsPage: React.FC = () => {
                       title: 'Margin',
                       key: 'margin',
                       render: (_: any, record: any) => {
-                        const margin = record.profitMargin !== undefined ? record.profitMargin : 
+                        const margin = record.profitMargin !== undefined ? record.profitMargin :
                           (record.cost_price > 0 ? ((record.selling_price - record.cost_price) / record.cost_price) * 100 : 0);
                         return (
                           <Text style={{ color: margin >= 20 ? '#52c41a' : margin >= 10 ? '#faad14' : '#ff4d4f' }}>
@@ -1775,6 +1971,30 @@ const AccountDetailsPage: React.FC = () => {
     };
 
     // ── Order action handlers ──
+    const handlePrintWsOrder = (order: any) => {
+      if (!order) return;
+      const ret = order.retailer || order.retailerProfile || {};
+      const items = order.orderItems || order.items || [];
+      printThermalReceipt({
+        receiptNo: '#' + (order.orderNumber || order.displayId || ('ORD-' + order.id)),
+        date: order.createdAt || new Date(),
+        paymentMethod: (order.paymentType || order.paymentMethod || 'BANK TRANSFER').replace('_', ' ').toUpperCase(),
+        retailerName: ret.shopName || ret.user?.name || 'Retailer',
+        customerPhone: ret.user?.phone || '',
+        items: items.map((item: any) => ({
+          name: item.name || item.product?.name || item.productName || 'Product',
+          quantity: item.quantity || 1,
+          unitPrice: item.price || item.unitPrice || 0,
+          total: item.total || (item.price || 0) * (item.quantity || 1),
+          sku: item.sku || item.product?.sku,
+        })),
+        subtotal: order.subtotal || order.totalAmount,
+        tax: order.tax || Math.round((order.totalAmount * 0.18) / 1.18),
+        total: order.totalAmount,
+        receiptTitle: 'WHOLESALE ORDER INVOICE',
+      }, { autoPrint: true });
+    };
+
     const handleWsConfirmOrder = async () => {
       if (!wsSelectedOrder) return;
       setWsActionLoading(true);
@@ -1902,9 +2122,9 @@ const AccountDetailsPage: React.FC = () => {
     });
 
     const wsStats = {
-      today_orders: allOrders.filter((o: any) => new Date(o.createdAt) >= new Date(new Date().setHours(0,0,0,0))).length,
+      today_orders: allOrders.filter((o: any) => new Date(o.createdAt) >= new Date(new Date().setHours(0, 0, 0, 0))).length,
       today_revenue: allOrders
-        .filter((o: any) => new Date(o.createdAt) >= new Date(new Date().setHours(0,0,0,0)) && o.status !== 'cancelled')
+        .filter((o: any) => new Date(o.createdAt) >= new Date(new Date().setHours(0, 0, 0, 0)) && o.status !== 'cancelled')
         .reduce((s: number, o: any) => s + (o.totalAmount || 0), 0),
       pending_orders: allOrders.filter((o: any) => o.status === 'pending').length,
       shipped_orders: allOrders.filter((o: any) => o.status === 'shipped').length,
@@ -1985,6 +2205,7 @@ const AccountDetailsPage: React.FC = () => {
         render: (_: any, r: any) => (
           <Space>
             <Button size="small" icon={<EyeOutlined />} onClick={() => { setWsSelectedOrder(r); setWsDetailModalOpen(true); }}>View</Button>
+            <Button size="small" icon={<PrinterOutlined />} onClick={() => handlePrintWsOrder(r)}>Print</Button>
             {r.status === 'pending' && (
               <>
                 <Button type="primary" size="small" icon={<CheckCircleOutlined />}
@@ -2202,6 +2423,7 @@ const AccountDetailsPage: React.FC = () => {
             <Modal title={`Order #${wsSelectedOrder?.orderNumber || wsSelectedOrder?.id}`}
               open={wsDetailModalOpen} onCancel={() => { setWsDetailModalOpen(false); setWsSelectedOrder(null); }} width={800}
               footer={[
+                <Button key="print" icon={<PrinterOutlined />} onClick={() => handlePrintWsOrder(wsSelectedOrder)}>Print Receipt</Button>,
                 <Button key="close" onClick={() => setWsDetailModalOpen(false)}>Close</Button>,
                 wsSelectedOrder?.status === 'pending' && (
                   <Button key="confirm" type="primary" onClick={() => { setWsDetailModalOpen(false); setWsConfirmModalOpen(true); }}>Accept Order</Button>
@@ -2502,9 +2724,14 @@ const AccountDetailsPage: React.FC = () => {
           </Descriptions>
         </Card>
       )}
-      {/* Order Details Modal */}
+      {/* Order Details Modal (Matching Consumer View) */}
       <Modal
-        title={`Order #${selectedOrder?.id}`}
+        title={
+          <Space>
+            <ShoppingOutlined style={{ color: '#1890ff' }} />
+            <span>Order Details - {selectedOrder?.order_number || selectedOrder?.display_id || ('ORD-' + selectedOrder?.id)}</span>
+          </Space>
+        }
         open={showOrderModal}
         onCancel={() => {
           setShowOrderModal(false);
@@ -2513,111 +2740,13 @@ const AccountDetailsPage: React.FC = () => {
         footer={[
           selectedOrder && (
             <Button
-              key="print"
-              icon={<PrinterOutlined />}
-              onClick={() => {
-                const order = selectedOrder;
-                const printWindow = window.open('', '_blank');
-                if (!printWindow) { message.error('Please allow popups to print'); return; }
-                const htmlContent = `
-                  <html>
-                  <head>
-                    <title>Order Receipt #${order.id}</title>
-                    <style>
-                      body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 20px; color: #333; }
-                      .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
-                      .company-name { font-size: 24px; font-weight: bold; margin: 0; }
-                      .receipt-title { font-size: 16px; color: #666; margin: 5px 0 0 0; }
-                      .info-grid { display: flex; justify-content: space-between; margin-bottom: 30px; }
-                      .info-group { flex: 1; }
-                      .label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
-                      .value { font-size: 14px; font-weight: 500; margin-top: 4px; }
-                      .right-align { text-align: right; }
-                      
-                      table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-                      th { text-align: left; border-bottom: 1px solid #ddd; padding: 10px 0; font-size: 12px; text-transform: uppercase; color: #666; }
-                      td { border-bottom: 1px solid #f5f5f5; padding: 12px 0; font-size: 14px; }
-                      .total-row td { border-bottom: none; border-top: 2px solid #333; font-weight: bold; font-size: 16px; padding-top: 15px; }
-                      .subtotal-row td { border-bottom: none; color: #666; padding-top: 5px; padding-bottom: 5px; }
-                      
-                      .footer { text-align: center; margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; font-size: 12px; color: #999; }
-                    </style>
-                  </head>
-                  <body>
-                    <div class="header">
-                      <div style="display: flex; justify-content: center; align-items: center; height: 70px; margin: 0 auto 8px;">
-                        <img src="/logo-big.png" alt="BIG" style="height: 100%; max-width: 100%; object-fit: contain;" />
-                      </div>
-                      <h1 class="company-name">Big Innovation Group Ltd</h1>
-                      <p style="margin: 2px 0; color: #666; font-size: 13px;">Kigali, Rwanda | +250788541239 | info@big.co.rw</p>
-                      <p class="receipt-title">Order Receipt</p>
-                    </div>
-
-                    <div class="info-grid">
-                      <div class="info-group">
-                        <div class="label">Customer</div>
-                        <div class="value">${order.consumerProfile?.fullName || 'Walk-in Customer'}</div>
-                        <div class="value">${order.consumerProfile?.user?.phone || 'N/A'}</div>
-                      </div>
-                      <div class="info-group right-align">
-                        <div class="label">Order Details</div>
-                        <div class="value">#${order.id}</div>
-                        <div class="value">${new Date(order.createdAt).toLocaleDateString()} ${new Date(order.createdAt).toLocaleTimeString()}</div>
-                        <div class="value" style="margin-top: 5px;">
-                          <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px;">${order.paymentMethod.replace('_', ' ').toUpperCase()}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <table>
-                      <thead>
-                        <tr>
-                          <th style="width: 50%">Item</th>
-                          <th style="width: 15%; text-align: center;">Qty</th>
-                          <th style="width: 15%; text-align: right;">Price</th>
-                          <th style="width: 20%; text-align: right;">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        ${(order.saleItems || []).map((item: any) => `
-                          <tr>
-                            <td>
-                              <div style="font-weight: 500;">${item.product?.name || item.productName || 'Unknown Product'}</div>
-                              <div style="font-size: 11px; color: #888;">SKU: ${item.product?.sku || 'N/A'}</div>
-                            </td>
-                            <td style="text-align: center;">${item.quantity}</td>
-                            <td style="text-align: right;">${item.price?.toLocaleString()}</td>
-                            <td style="text-align: right;">${(item.price * item.quantity).toLocaleString()} RWF</td>
-                          </tr>
-                        `).join('')}
-                        
-                        <tr class="subtotal-row">
-                          <td colspan="3" style="text-align: right;">Subtotal</td>
-                          <td style="text-align: right;">${order.totalAmount?.toLocaleString()} RWF</td>
-                        </tr>
-                        <tr class="total-row">
-                          <td colspan="3" style="text-align: right;">Total</td>
-                          <td style="text-align: right;">${order.totalAmount?.toLocaleString()} RWF</td>
-                        </tr>
-                      </tbody>
-                    </table>
-
-                    <div class="footer">
-                      <p>Thank you for your business!</p>
-                      <p>BIG Company Rwanda Distribution Platform</p>
-                    </div>
-                    
-                    <script>
-                      window.onload = function() { window.print(); window.close(); }
-                    </script>
-                  </body>
-                  </html>
-                `;
-                printWindow.document.write(htmlContent);
-                printWindow.document.close();
-              }}
+              key="view-receipt"
+              type="primary"
+              ghost
+              icon={<EyeOutlined />}
+              onClick={() => setShowReceiptModal(true)}
             >
-              Print
+              View Receipt
             </Button>
           ),
           <Button key="close" onClick={() => {
@@ -2627,160 +2756,322 @@ const AccountDetailsPage: React.FC = () => {
             Close
           </Button>
         ]}
-        width={700}
+        width={650}
       >
         {selectedOrder && (() => {
-          const statusIdx = ['pending', 'processing', 'shipped', 'completed', 'delivered'].indexOf(selectedOrder.status?.toLowerCase());
-          const stepVal = statusIdx >= 3 ? 3 : (statusIdx >= 0 ? statusIdx : 0);
-          
-          const pmLabels: Record<string, string> = {
-            dashboard_wallet: 'Dashboard Wallet', credit_wallet: 'Credit Wallet',
-            mobile_money: 'Mobile Money', cash: 'Cash', wallet: 'Wallet',
-            nfc: 'NFC Card', credit: 'Credit',
+          const statusColors: Record<string, string> = {
+            pending: 'orange', processing: 'blue', shipped: 'cyan', completed: 'green', delivered: 'green', cancelled: 'red', rejected: 'red'
           };
-          const pmColors: Record<string, string> = {
-            dashboard_wallet: 'blue', credit_wallet: 'purple', mobile_money: 'gold',
-            cash: 'green', wallet: 'blue', nfc: 'purple', credit: 'orange',
-          };
+          const orderDate = selectedOrder.createdAt || selectedOrder.created_at || new Date();
+          const storeName = selectedOrder.retailerProfile?.shopName || selectedOrder.retailer?.name || 'IKIZERE SHOP';
+          const storeLocation = selectedOrder.retailerProfile?.address || selectedOrder.retailer?.location || 'KG14 Ave189, Gisozi, Gasabo, Kigali, Rwanda';
+          const storePhone = selectedOrder.retailerProfile?.user?.phone || selectedOrder.retailer?.phone || '+2507808850900';
+          const deliveryAddr = selectedOrder.deliveryAddress || selectedOrder.delivery_address || 'hjjkk, gisozi, Gasabo';
+          const items = selectedOrder.saleItems || selectedOrder.items || [];
+          const subtotal = selectedOrder.subtotal || selectedOrder.totalAmount || selectedOrder.total || 0;
+          const total = selectedOrder.totalAmount || selectedOrder.total || subtotal;
+          const taxAmount = Math.round(total - (total / 1.18));
+          const statusStr = (selectedOrder.status || 'COMPLETED').toUpperCase();
+          const pm = selectedOrder.paymentMethod || selectedOrder.payment_method || 'nfc';
 
           return (
             <div>
-              {/* Status Steps */}
-              {selectedOrder.status !== 'cancelled' && selectedOrder.status !== 'rejected' && (
-                <Steps
-                  current={stepVal}
-                  size="small"
-                  style={{ marginBottom: 24 }}
-                  items={[
-                    { title: 'Pending' },
-                    { title: 'Proceed' },
-                    { title: 'Shipped' },
-                    { title: 'Delivered' },
-                  ]}
-                />
-              )}
-
-              {/* Cancelled Banner */}
-              {(selectedOrder.status === 'cancelled' || selectedOrder.status === 'rejected') && (
-                <div style={{ background: '#fff1f0', padding: 16, borderRadius: 8, marginBottom: 24, border: '1px solid #ffa39e' }}>
-                  <CloseCircleOutlined style={{ color: '#ff4d4f', marginRight: 8 }} />
-                  <Text strong style={{ color: '#ff4d4f' }}>Order Cancelled</Text>
-                  {selectedOrder.notes && (
-                    <div><Text type="secondary">Reason: {selectedOrder.notes}</Text></div>
-                  )}
-                </div>
-              )}
-
-              {/* Shipped Information Banner */}
-              {selectedOrder.shipperName && (
-                <div style={{ background: '#f9f0ff', padding: 16, borderRadius: 8, marginBottom: 24, border: '1px solid #d3adf7' }}>
-                  <TruckOutlined style={{ color: '#722ed1', marginRight: 8 }} />
-                  <Text strong style={{ color: '#722ed1' }}>Shipping Information</Text>
-                  <Descriptions size="small" column={2} style={{ marginTop: 8 }}>
-                    <Descriptions.Item label="Shipper">{selectedOrder.shipperName}</Descriptions.Item>
-                    <Descriptions.Item label="Phone">{selectedOrder.shipperPhone}</Descriptions.Item>
-                    <Descriptions.Item label="Vehicle Plate">{selectedOrder.vehiclePlate}</Descriptions.Item>
-                  </Descriptions>
-                </div>
-              )}
-
-              <Descriptions column={2} size="small" style={{ marginBottom: 24 }}>
-                <Descriptions.Item label="Customer">{selectedOrder.consumerProfile?.fullName || 'Walk-in Customer'}</Descriptions.Item>
-                <Descriptions.Item label="Phone">{selectedOrder.consumerProfile?.user?.phone || 'N/A'}</Descriptions.Item>
-                <Descriptions.Item label="Payment">
-                  <Tag color={pmColors[selectedOrder.paymentMethod] || 'blue'}>
-                    {pmLabels[selectedOrder.paymentMethod] || selectedOrder.paymentMethod?.toUpperCase()}
-                  </Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label="Status">
-                  <Tag color={orderStatusColors[selectedOrder.status?.toLowerCase()] || 'blue'}>
-                    {orderStatusLabels[selectedOrder.status?.toLowerCase()] || selectedOrder.status?.toUpperCase()}
-                  </Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label="Created">{new Date(selectedOrder.createdAt).toLocaleString()}</Descriptions.Item>
-                {selectedOrder.notes && (
-                  <Descriptions.Item label="Retailer Comments" span={2}>
-                    <div style={{ background: '#f5f5f5', padding: '8px 12px', borderRadius: 4, width: '100%' }}>
-                      <Text italic>{selectedOrder.notes}</Text>
+              {/* Order Status & Payment Card */}
+              <Card size="small" style={{ marginBottom: 16, background: '#f8fafc', borderRadius: 8 }}>
+                <Row gutter={16} align="middle">
+                  <Col span={12}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>Order Status</Text>
+                    <div style={{ marginTop: 4 }}>
+                      <Tag color={statusColors[selectedOrder.status?.toLowerCase()] || 'green'}>
+                        {statusStr}
+                      </Tag>
                     </div>
-                  </Descriptions.Item>
-                )}
-              </Descriptions>
+                  </Col>
+                  <Col span={12}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>Payment Method</Text>
+                    <div style={{ marginTop: 4 }}>
+                      <Text strong style={{ textTransform: 'lowercase' }}>{pm}</Text>
+                    </div>
+                    {selectedOrder.meter_id && selectedOrder.meter_id !== 'N/A' && (
+                      <Text type="secondary" style={{ fontSize: 11 }}>Meter: {selectedOrder.meter_id}</Text>
+                    )}
+                  </Col>
+                </Row>
+              </Card>
 
-              <Table
-                dataSource={selectedOrder.saleItems || []}
-                pagination={false}
-                rowKey="id"
+              {/* Order Timeline Card */}
+              <Card title="Order Timeline" size="small" style={{ marginBottom: 16, borderRadius: 8 }}>
+                <Timeline style={{ marginTop: 8 }}>
+                  <Timeline.Item color="green">
+                    <Text strong>Order Placed</Text>
+                    <br />
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {new Date(orderDate).toLocaleString()}
+                    </Text>
+                  </Timeline.Item>
+                  {selectedOrder.status === 'delivered' && (
+                    <Timeline.Item color="green">
+                      <Text strong>Delivered</Text>
+                      <br />
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        {new Date(selectedOrder.updatedAt || orderDate).toLocaleString()}
+                      </Text>
+                    </Timeline.Item>
+                  )}
+                </Timeline>
+              </Card>
+
+              {/* Store Information */}
+              <Card
+                title={
+                  <Space size={6}>
+                    <ShopOutlined />
+                    <span>Store Information</span>
+                  </Space>
+                }
                 size="small"
-                columns={[
-                  {
-                    title: 'Product',
-                    key: 'product',
-                    render: (_, record: any) => (
-                      <Space>
-                        {record.product?.image ? (
-                          <img
-                            src={record.product.image}
-                            alt={record.product.name}
-                            style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4 }}
-                          />
-                        ) : (
-                          <div style={{ width: 40, height: 40, background: '#f5f5f5', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <ShoppingCartOutlined style={{ fontSize: 20, color: '#ccc' }} />
-                          </div>
-                        )}
-                        <div>
-                          <Text strong>{record.product?.name || record.productName || 'Unknown Product'}</Text>
-                          <br />
-                          <Text type="secondary" style={{ fontSize: 11 }}>SKU: {record.product?.sku || 'N/A'}</Text>
-                        </div>
+                style={{ marginBottom: 16, borderRadius: 8 }}
+              >
+                <Descriptions size="small" column={1}>
+                  <Descriptions.Item label="Store Name"><Text strong>{storeName}</Text></Descriptions.Item>
+                  <Descriptions.Item label="Location">
+                    <Space size={4}>
+                      <EnvironmentOutlined style={{ color: '#999' }} />
+                      <Text>{storeLocation}</Text>
+                    </Space>
+                  </Descriptions.Item>
+                  {storePhone && (
+                    <Descriptions.Item label="Phone">
+                      <Space size={4}>
+                        <PhoneOutlined style={{ color: '#999' }} />
+                        <Text>{storePhone}</Text>
                       </Space>
-                    ),
-                  },
-                  {
-                    title: 'Qty',
-                    dataIndex: 'quantity',
-                    key: 'quantity',
-                    align: 'center',
-                  },
-                  {
-                    title: 'Price',
-                    dataIndex: 'price',
-                    key: 'price',
-                    render: (value: number) => `${value?.toLocaleString()} RWF`,
-                    align: 'right',
-                  },
-                  {
-                    title: 'Total',
-                    key: 'total',
-                    render: (_, record: any) => <Text strong>{((record.price || 0) * (record.quantity || 0))?.toLocaleString()} RWF</Text>,
-                    align: 'right',
-                  },
-                ]}
-                summary={() => (
-                  <>
-                    <Table.Summary.Row>
-                      <Table.Summary.Cell index={0} colSpan={3}><Text>Subtotal</Text></Table.Summary.Cell>
-                      <Table.Summary.Cell index={1} align="right">
-                        <Text>{selectedOrder.totalAmount?.toLocaleString()} RWF</Text>
-                      </Table.Summary.Cell>
-                    </Table.Summary.Row>
-                    <Table.Summary.Row>
-                      <Table.Summary.Cell index={0} colSpan={3}><Title level={5} style={{ margin: 0 }}>Total</Title></Table.Summary.Cell>
-                      <Table.Summary.Cell index={1} align="right">
-                        <Title level={5} style={{ margin: 0, color: '#0ea5e9' }}>
-                          {selectedOrder.totalAmount?.toLocaleString()} RWF
-                        </Title>
-                      </Table.Summary.Cell>
-                    </Table.Summary.Row>
-                  </>
-                )}
-              />
+                    </Descriptions.Item>
+                  )}
+                </Descriptions>
+              </Card>
+
+              {/* Delivery Address */}
+              <Card
+                title={
+                  <Space size={6}>
+                    <EnvironmentOutlined />
+                    <span>Delivery Address</span>
+                  </Space>
+                }
+                size="small"
+                style={{ marginBottom: 16, borderRadius: 8 }}
+              >
+                <Text>{deliveryAddr}</Text>
+              </Card>
+
+              {/* Items List */}
+              <div style={{ marginBottom: 16 }}>
+                <Title level={5} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                  <ShoppingOutlined />
+                  <span>Items ({items.length})</span>
+                </Title>
+                <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                  {items.map((item: any, idx: number) => {
+                    const itemName = item.product?.name || item.product_name || item.productName || 'Product';
+                    const itemImg = item.product?.image || item.image;
+                    const itemPrice = item.price || item.unit_price || 0;
+                    const itemQty = item.quantity || 1;
+                    const itemTotal = item.total || (itemPrice * itemQty);
+                    return (
+                      <Row key={item.id || idx} justify="space-between" align="middle" style={{ paddingBottom: 10, borderBottom: '1px solid #f0f0f0' }}>
+                        <Col>
+                          <Space align="start" size={12}>
+                            {itemImg ? (
+                              <img
+                                src={itemImg}
+                                alt={itemName}
+                                style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 6 }}
+                              />
+                            ) : (
+                              <div style={{ width: 44, height: 44, background: '#f5f5f5', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <ShoppingOutlined style={{ fontSize: 20, color: '#bbb' }} />
+                              </div>
+                            )}
+                            <div>
+                              <Text strong>{itemName}</Text>
+                              <br />
+                              <Text type="secondary" style={{ fontSize: 12 }}>
+                                {itemPrice.toLocaleString()} RWF x {itemQty}
+                              </Text>
+                            </div>
+                          </Space>
+                        </Col>
+                        <Col>
+                          <Text strong>{itemTotal.toLocaleString()} RWF</Text>
+                        </Col>
+                      </Row>
+                    );
+                  })}
+                </Space>
+              </div>
+
+              {/* Order Summary */}
+              <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #f0f0f0' }}>
+                <Row justify="space-between" style={{ marginBottom: 6 }}>
+                  <Col><Text>Subtotal</Text></Col>
+                  <Col><Text>{subtotal.toLocaleString()} RWF</Text></Col>
+                </Row>
+                <Row justify="space-between" style={{ marginBottom: 6 }}>
+                  <Col><Text type="secondary">0</Text></Col>
+                </Row>
+                <Row justify="space-between" style={{ marginBottom: 12 }}>
+                  <Col><Text type="secondary">Tax (18% VAT included)</Text></Col>
+                  <Col><Text type="secondary">{taxAmount.toLocaleString()} RWF</Text></Col>
+                </Row>
+                <Row justify="space-between" align="middle" style={{ borderTop: '1px solid #f0f0f0', paddingTop: 8 }}>
+                  <Col><Text strong style={{ fontSize: 16 }}>Total</Text></Col>
+                  <Col><Text strong style={{ fontSize: 16, color: '#52c41a' }}>{total.toLocaleString()} RWF</Text></Col>
+                </Row>
+              </div>
             </div>
           );
         })()}
       </Modal>
 
+      {/* Order Receipt Modal (Standardized Branded Format) */}
+      <Modal
+        title={
+          <Space>
+            <PrinterOutlined style={{ color: '#1890ff' }} />
+            <span>Order Receipt</span>
+          </Space>
+        }
+        open={showReceiptModal}
+        onCancel={() => setShowReceiptModal(false)}
+        footer={[
+          <Button
+            key="download"
+            type="primary"
+            icon={<DownloadOutlined />}
+            onClick={handleDownloadReceipt}
+          >
+            Download PDF
+          </Button>,
+          <Button key="close" onClick={() => setShowReceiptModal(false)}>
+            Close
+          </Button>,
+        ]}
+        width={600}
+      >
+        {selectedOrder && (() => {
+          const receiptNo = selectedOrder.order_number || selectedOrder.display_id || ('ORD-' + selectedOrder.id);
+          const orderDate = selectedOrder.createdAt || selectedOrder.created_at || new Date();
+          const storeName = selectedOrder.retailerProfile?.shopName || selectedOrder.retailer?.name || 'IKIZERE SHOP';
+          const storeLocation = selectedOrder.retailerProfile?.address || selectedOrder.retailer?.location || 'KG14 Ave189, Gisozi, Gasabo, Kigali, Rwanda';
+          const items = selectedOrder.saleItems || selectedOrder.items || [];
+          const subtotal = selectedOrder.subtotal || selectedOrder.totalAmount || selectedOrder.total || 0;
+          const total = selectedOrder.totalAmount || selectedOrder.total || subtotal;
+          const taxAmount = Math.round(total - (total / 1.18));
+          const pm = (selectedOrder.paymentMethod || selectedOrder.payment_method || 'CASH').toUpperCase();
+
+          return (
+            <div style={{ padding: '20px', background: 'white' }}>
+              {/* Receipt Header */}
+              <div style={{ textAlign: 'center', marginBottom: 12, borderBottom: '2px solid #1890ff', paddingBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80px', width: '100%', marginBottom: '12px' }}>
+                  <img
+                    src="/logo-big.png"
+                    alt="BIG"
+                    style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
+                  />
+                </div>
+                <div style={{ fontWeight: 900, fontSize: '16px', letterSpacing: '1px', color: '#1890ff', marginBottom: 2 }}>
+                  Big Innovation Group Ltd
+                </div>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  Kigali, Rwanda | +250788541239 | info@big.co.rw
+                </Text>
+              </div>
+
+              {/* Receipt Info */}
+              <Descriptions bordered size="small" column={2} style={{ marginBottom: 16 }}>
+                <Descriptions.Item label="Receipt #" span={2}>
+                  <Text strong>{receiptNo}</Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="Date">
+                  {new Date(orderDate).toLocaleString()}
+                </Descriptions.Item>
+                <Descriptions.Item label="Status">
+                  <Tag color="green">
+                    {(selectedOrder.status || 'COMPLETED').toUpperCase()}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Payment Method" span={2}>
+                  {pm}
+                  {selectedOrder.meter_id && selectedOrder.meter_id !== 'N/A' && (
+                    <> (Meter: {selectedOrder.meter_id})</>
+                  )}
+                </Descriptions.Item>
+              </Descriptions>
+
+              {/* Store Info */}
+              <div style={{ marginBottom: 16 }}>
+                <Text strong>Store: </Text>
+                <Text>{storeName}</Text>
+                <br />
+                <Text strong>Location: </Text>
+                <Text>{storeLocation}</Text>
+              </div>
+
+              {/* Items */}
+              <table style={{ width: '100%', marginBottom: 16, borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #000' }}>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Item</th>
+                    <th style={{ textAlign: 'center', padding: '8px' }}>Qty</th>
+                    <th style={{ textAlign: 'right', padding: '8px' }}>Price</th>
+                    <th style={{ textAlign: 'right', padding: '8px' }}>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item: any, index: number) => {
+                    const itemName = item.product?.name || item.product_name || item.productName || 'Product';
+                    const itemQty = item.quantity || 1;
+                    const itemPrice = item.price || item.unit_price || 0;
+                    const itemTotal = item.total || (itemQty * itemPrice);
+                    return (
+                      <tr key={item.id || index} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={{ padding: '8px' }}>{itemName}</td>
+                        <td style={{ textAlign: 'center', padding: '8px' }}>{itemQty}</td>
+                        <td style={{ textAlign: 'right', padding: '8px' }}>{itemPrice.toLocaleString()} RWF</td>
+                        <td style={{ textAlign: 'right', padding: '8px' }}>{itemTotal.toLocaleString()} RWF</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              {/* Totals */}
+              <div style={{ borderTop: '2px solid #000', paddingTop: 8, textAlign: 'right' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <Text>Subtotal:</Text>
+                  <Text>{subtotal.toLocaleString()} RWF</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <Text type="secondary">Tax (18% VAT included):</Text>
+                  <Text type="secondary">{taxAmount.toLocaleString()} RWF</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, borderTop: '1px solid #eee', paddingTop: 8 }}>
+                  <Title level={4} style={{ margin: 0 }}>TOTAL:</Title>
+                  <Title level={4} style={{ margin: 0, color: '#1890ff' }}>{total.toLocaleString()} RWF</Title>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div style={{ textAlign: 'center', marginTop: 24, paddingTop: 16, borderTop: '1px solid #eee', color: '#555', fontSize: 13, lineHeight: '1.6' }}>
+                <div>Thank you for shopping with Big Innovation Group Ltd!</div>
+                <div style={{ fontSize: 12, color: '#666' }}>For support: +250788541239 | info@big.co.rw</div>
+              </div>
+            </div>
+          );
+        })()}
+      </Modal>
       {/* Barcode Printing Modal */}
       <Modal
         title="Print Barcode Labels"

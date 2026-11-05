@@ -1,7 +1,7 @@
 export const COMPANY_INFO = {
-  name: "Big Innovation Group Ltd",
+  name: "BIG INNOVATION GROUP LTD",
   shortName: "BIG Ltd",
-  systemName: "BIG Ltd Rwanda Innovation Platform",
+  systemName: "BIG INNOVATION GROUP LTD",
   address: "KK39 Ave, Kigali, Rwanda",
   email: "info@big.co.rw",
   phone: "+250788541239",

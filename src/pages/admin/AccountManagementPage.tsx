@@ -646,8 +646,8 @@ const AccountManagementPage: React.FC = () => {
             </div>
             <p className="text-blue-100 text-lg opacity-90">View and manage customer, retailer & wholesaler accounts</p>
           </div>
-          <Button 
-            icon={<ReloadOutlined />} 
+          <Button
+            icon={<ReloadOutlined />}
             onClick={loadAccounts}
             className="bg-white/10 border-white/20 text-white hover:bg-white/20 transition-all rounded-lg h-10 px-6"
           >
@@ -706,7 +706,7 @@ const AccountManagementPage: React.FC = () => {
               {
                 key: 'retailers',
                 label: (
-                   <span className="flex items-center gap-2 px-4 py-2 text-lg">
+                  <span className="flex items-center gap-2 px-4 py-2 text-lg">
                     <ShopOutlined /> Retailers ({retailers.length})
                   </span>
                 ),
@@ -767,8 +767,8 @@ const AccountManagementPage: React.FC = () => {
                 <div className="py-20 flex flex-col items-center">
                   <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4 transition-transform hover:scale-110">
                     {activeTab === 'customers' ? <UserOutlined className="text-gray-300 text-4xl" /> :
-                     activeTab === 'retailers' ? <ShopOutlined className="text-gray-300 text-4xl" /> :
-                     <BankOutlined className="text-gray-300 text-4xl" />}
+                      activeTab === 'retailers' ? <ShopOutlined className="text-gray-300 text-4xl" /> :
+                        <BankOutlined className="text-gray-300 text-4xl" />}
                   </div>
                   <p className="text-gray-400 text-lg">No data</p>
                 </div>
@@ -846,7 +846,7 @@ const AccountManagementPage: React.FC = () => {
               ]}
               extra="User will be required to change this password on first login"
             >
-              <Input.Password prefix={<LockOutlined className="text-gray-400" />} placeholder="Temporary password"  className="py-2.5 rounded-lg"/>
+              <Input.Password prefix={<LockOutlined className="text-gray-400" />} placeholder="Temporary password" className="py-2.5 rounded-lg" />
             </Form.Item>
           )}
 
@@ -996,7 +996,7 @@ const AccountManagementPage: React.FC = () => {
             label={<span className="font-semibold">Company Name</span>}
             rules={[{ required: true, message: 'Please enter company name' }]}
           >
-            <Input prefix={<BankOutlined className="text-gray-400" />} placeholder="e.g., BIG Company Rwanda Ltd" className="py-2.5 rounded-lg" />
+            <Input prefix={<BankOutlined className="text-gray-400" />} placeholder="e.g., BIG INNOVATION GROUP LTD" className="py-2.5 rounded-lg" />
           </Form.Item>
 
           <Row gutter={24}>
@@ -1033,7 +1033,7 @@ const AccountManagementPage: React.FC = () => {
               ]}
               extra="User will be required to change this password on first login"
             >
-              <Input.Password prefix={<LockOutlined className="text-gray-400" />} placeholder="Temporary password"  className="py-2.5 rounded-lg"/>
+              <Input.Password prefix={<LockOutlined className="text-gray-400" />} placeholder="Temporary password" className="py-2.5 rounded-lg" />
             </Form.Item>
           )}
 
